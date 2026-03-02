@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: automata-api
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @automation/api build
+    startCommand: pnpm --filter @automation/api start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+
+cronJobs:
+  - name: run-due-automations
+    schedule: "* * * * *"
+    method: POST
+    path: /api/v1/internal/run-due-automations
+    headers:
+      - key: Authorization
+        value: Bearer ${INTERNAL_CRON_TOKEN}

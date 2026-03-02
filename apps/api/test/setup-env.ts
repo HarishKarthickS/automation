@@ -1,0 +1,17 @@
+process.env.NODE_ENV = process.env.NODE_ENV ?? "test";
+process.env.PORT = process.env.PORT ?? "8080";
+process.env.DATABASE_URL = process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/automation";
+process.env.BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET ?? "test-secret-test-secret-test-secret-123";
+process.env.BETTER_AUTH_URL = process.env.BETTER_AUTH_URL ?? "http://localhost:8080";
+process.env.FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
+process.env.MASTER_ENCRYPTION_KEY =
+  process.env.MASTER_ENCRYPTION_KEY ?? "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
+process.env.INTERNAL_CRON_TOKEN = process.env.INTERNAL_CRON_TOKEN ?? "test-internal-token-1234567890";
+process.env.MAX_CODE_SIZE_BYTES = process.env.MAX_CODE_SIZE_BYTES ?? "102400";
+process.env.MAX_OUTPUT_BYTES = process.env.MAX_OUTPUT_BYTES ?? "262144";
+process.env.DEFAULT_TIMEOUT_SECONDS = process.env.DEFAULT_TIMEOUT_SECONDS ?? "30";
+process.env.MAX_TIMEOUT_SECONDS = process.env.MAX_TIMEOUT_SECONDS ?? "120";
+process.env.EXECUTION_CONCURRENCY = process.env.EXECUTION_CONCURRENCY ?? "2";
+process.env.PER_USER_CONCURRENT_RUNS = process.env.PER_USER_CONCURRENT_RUNS ?? "2";
+process.env.PER_USER_DAILY_RUN_LIMIT = process.env.PER_USER_DAILY_RUN_LIMIT ?? "100";
+process.env.RUN_RETENTION_DAYS = process.env.RUN_RETENTION_DAYS ?? "30";

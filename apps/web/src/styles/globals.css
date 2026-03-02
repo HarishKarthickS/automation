@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 42% 96%;
+    --foreground: 177 26% 14%;
+    --card: 42 44% 99%;
+    --card-foreground: 177 26% 15%;
+    --popover: 42 44% 99%;
+    --popover-foreground: 177 26% 15%;
+    --primary: 176 68% 28%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 36 28% 88%;
+    --secondary-foreground: 177 26% 18%;
+    --muted: 38 30% 90%;
+    --muted-foreground: 180 14% 26%;
+    --accent: 178 42% 87%;
+    --accent-foreground: 177 28% 18%;
+    --destructive: 4 72% 42%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 36 20% 74%;
+    --input: 36 20% 74%;
+    --ring: 176 68% 30%;
+    --chart-1: 176 68% 32%;
+    --chart-2: 24 64% 52%;
+    --chart-3: 196 52% 42%;
+    --chart-4: 44 82% 45%;
+    --chart-5: 340 68% 52%;
+    --radius: 0.85rem;
+    --success: 146 66% 34%;
+    --warning: 36 82% 44%;
+    --surface-1: 40 40% 95%;
+    --surface-2: 36 32% 91%;
+    --surface-3: 179 28% 88%;
+  }
+
+  .dark {
+    --background: 183 22% 8%;
+    --foreground: 40 30% 93%;
+    --card: 184 20% 11%;
+    --card-foreground: 40 30% 93%;
+    --popover: 184 20% 11%;
+    --popover-foreground: 40 30% 93%;
+    --primary: 174 64% 44%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 186 20% 18%;
+    --secondary-foreground: 40 28% 88%;
+    --muted: 186 18% 16%;
+    --muted-foreground: 36 18% 80%;
+    --accent: 175 26% 22%;
+    --accent-foreground: 40 30% 90%;
+    --destructive: 4 68% 52%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 185 16% 30%;
+    --input: 185 16% 30%;
+    --ring: 174 64% 44%;
+    --chart-1: 174 64% 48%;
+    --chart-2: 30 72% 56%;
+    --chart-3: 198 60% 56%;
+    --chart-4: 44 82% 57%;
+    --chart-5: 336 62% 58%;
+    --success: 146 64% 46%;
+    --warning: 36 80% 56%;
+    --surface-1: 184 20% 10%;
+    --surface-2: 184 20% 14%;
+    --surface-3: 176 22% 19%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at 8% 6%, hsl(174 52% 72% / 0.28), transparent 32%),
+      radial-gradient(circle at 85% 0%, hsl(30 68% 76% / 0.24), transparent 30%),
+      radial-gradient(circle at 50% 100%, hsl(var(--surface-3) / 0.28), transparent 45%),
+      linear-gradient(180deg, hsl(var(--background)), hsl(var(--surface-1)));
+    background-attachment: fixed;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background:
+      repeating-linear-gradient(
+        0deg,
+        hsl(var(--border) / 0.06) 0px,
+        hsl(var(--border) / 0.06) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+    mix-blend-mode: soft-light;
+    opacity: 0.45;
+  }
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+.grid-backdrop {
+  background-image:
+    linear-gradient(to right, hsl(var(--border) / 0.3) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--border) / 0.3) 1px, transparent 1px);
+  background-size: 38px 38px;
+}
+
+.page-shell {
+  @apply mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8;
+}
+
+.panel {
+  @apply rounded-2xl border bg-card shadow-[0_18px_60px_hsl(var(--foreground)/0.08)] transition-all duration-200;
+}
+
+.panel:hover {
+  @apply shadow-[0_24px_68px_hsl(var(--foreground)/0.12)];
+}
+
+.hero-surface {
+  @apply relative overflow-hidden border-border/80 bg-gradient-to-br from-card via-card to-accent/20 shadow-[0_24px_70px_hsl(var(--foreground)/0.12)];
+}
+
+.hero-surface::after {
+  content: "";
+  position: absolute;
+  inset: -40% -20% auto;
+  height: 65%;
+  transform: rotate(-6deg);
+  background: linear-gradient(
+    90deg,
+    hsl(var(--primary) / 0.16),
+    hsl(var(--warning) / 0.1),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.stat-card {
+  @apply border-border/80 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md;
+}
+
+.fade-in {
+  animation: fadeInUp 260ms ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.kbd {
+  @apply rounded border bg-muted px-2 py-1 text-xs text-muted-foreground;
+}
+
+@layer utilities {
+  .animate-in {
+    animation: animate-in 150ms ease-out;
+  }
+
+  .slide-in-from-bottom {
+    --tw-enter-translate-y: 100%;
+  }
+}
+
+@keyframes animate-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

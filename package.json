@@ -1,0 +1,14 @@
+{
+  "name": "automation-saas-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "packageManager": "pnpm@10.6.5",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  }
+}
+
