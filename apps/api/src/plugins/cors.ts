@@ -4,22 +4,36 @@ import { env } from "../config/env.js";
 
 export const corsPlugin = fp(async (app) => {
   await app.register(cors, {
-    origin(origin, callback) {
-      if (!origin) {
-        callback(null, true);
+    delegator(request, callback) {
+      if (request.url.startsWith("/api/v1/internal/run-due-automations")) {
+        callback(null, {
+          origin: true,
+          credentials: false,
+          methods: ["POST", "OPTIONS"],
+          allowedHeaders: ["Content-Type", "Authorization"]
+        });
         return;
       }
 
-      if (env.corsOrigins.includes(origin)) {
-        callback(null, true);
-        return;
-      }
+      callback(null, {
+        origin(origin, originCallback) {
+          if (!origin) {
+            originCallback(null, true);
+            return;
+          }
 
-      callback(new Error("Origin not allowed"), false);
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"]
+          if (env.corsOrigins.includes(origin)) {
+            originCallback(null, true);
+            return;
+          }
+
+          originCallback(new Error("Origin not allowed"), false);
+        },
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"]
+      });
+    }
   });
 });
 
