@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, ilike, lt, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { automations, templates, users } from "../db/schema.js";
-import { computeNextRun } from "../scheduler/cronParser.js";
+import { computeNextRunOrThrow } from "../scheduler/scheduleValidation.js";
 import { HttpError } from "../utils/errors.js";
 import { getCachedAsync, setCached, invalidateByPrefix } from "../utils/memoryCache.js";
 
@@ -116,7 +116,7 @@ export async function cloneTemplateForUser(
       runtime: row.template.runtime,
       cronExpr: row.template.cronExpr,
       timezone,
-      nextRunAt: computeNextRun(row.template.cronExpr, timezone),
+      nextRunAt: computeNextRunOrThrow(row.template.cronExpr, timezone, "template clone"),
       timeoutSeconds: row.template.timeoutSeconds,
       enabled: false,
       tags: row.template.tags

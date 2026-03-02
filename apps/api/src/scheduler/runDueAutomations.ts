@@ -52,7 +52,27 @@ async function claimDueAutomations(batchSize = DEFAULT_BATCH_SIZE): Promise<Clai
     const claimed: ClaimedRun[] = [];
 
     for (const row of dueRows) {
-      const nextRunAt = computeNextRun(row.cron_expr, row.timezone, new Date());
+      let nextRunAt: Date;
+      try {
+        nextRunAt = computeNextRun(row.cron_expr, row.timezone, new Date());
+      } catch (error) {
+        logger.error(
+          {
+            err: error,
+            automationId: row.id,
+            userId: row.user_id,
+            cronExpr: row.cron_expr,
+            timezone: row.timezone
+          },
+          "Invalid schedule in due automation, disabling automation"
+        );
+
+        await tx
+          .update(automations)
+          .set({ enabled: false, updatedAt: new Date() })
+          .where(eq(automations.id, row.id));
+        continue;
+      }
 
       await tx
         .update(automations)
@@ -204,16 +224,19 @@ export async function cleanupOldRuns() {
 }
 
 export async function runDueAutomations(batchSize = DEFAULT_BATCH_SIZE) {
+  logger.info({ batchSize }, "Starting due automation run");
   const claimed = await claimDueAutomations(batchSize);
 
   if (!claimed.length) {
     await cleanupOldRuns();
+    logger.info({ claimed: 0 }, "No due automations claimed");
     return { claimed: 0 };
   }
 
   await runInBatches(claimed, limits.executionConcurrency);
   await cleanupOldRuns();
 
+  logger.info({ claimed: claimed.length }, "Completed due automation run");
   return { claimed: claimed.length };
 }
 

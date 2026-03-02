@@ -2,14 +2,14 @@ import { and, desc, eq, lt } from "drizzle-orm";
 import type { CreateAutomationInput, UpdateAutomationInput } from "@automation/shared";
 import { db } from "../db/client.js";
 import { automations, templates } from "../db/schema.js";
-import { computeNextRun } from "../scheduler/cronParser.js";
+import { computeNextRunOrThrow } from "../scheduler/scheduleValidation.js";
 import { HttpError } from "../utils/errors.js";
 import { getCachedAsync, setCached, invalidateByPrefix } from "../utils/memoryCache.js";
 
 const LIST_CACHE_TTL = 30;
 
 export async function createAutomation(userId: string, input: CreateAutomationInput) {
-  const nextRunAt = computeNextRun(input.cronExpr, input.timezone);
+  const nextRunAt = computeNextRunOrThrow(input.cronExpr, input.timezone, "automation creation");
 
   const [created] = await db
     .insert(automations)
@@ -94,7 +94,7 @@ export async function updateAutomation(userId: string, id: string, input: Update
   const timezone = input.timezone ?? current.timezone;
   const nextRunAt =
     input.cronExpr || input.timezone || input.enabled !== undefined
-      ? computeNextRun(cronExpr, timezone)
+      ? computeNextRunOrThrow(cronExpr, timezone, "automation update")
       : current.nextRunAt;
 
   const [updated] = await db

@@ -92,16 +92,19 @@ export function createApp() {
     const anyError = error as any;
 
     if (error instanceof HttpError) {
+      app.log.warn({ err: error, statusCode: error.statusCode }, "Handled HttpError");
       reply.code(error.statusCode).send({ message: error.message });
       return;
     }
 
     if (anyError.name === "ZodError") {
+      app.log.warn({ err: error, issues: anyError.issues }, "Request validation failed");
       reply.code(400).send({ message: "Invalid request payload", issues: anyError.issues });
       return;
     }
 
     if (typeof anyError.statusCode === "number" && anyError.statusCode >= 400) {
+      app.log.warn({ err: error, statusCode: anyError.statusCode }, "Handled framework/client error");
       reply.code(anyError.statusCode).send({ message: anyError.message ?? "Request error" });
       return;
     }
