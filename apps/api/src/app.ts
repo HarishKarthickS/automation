@@ -30,6 +30,23 @@ export function createApp() {
   });
 
   app.addHook("onRequest", async (request) => {
+    if (request.method !== "POST" || !request.url.startsWith("/api/v1/internal/run-due-automations")) {
+      return;
+    }
+
+    const contentType = request.headers["content-type"];
+    const contentLength = request.headers["content-length"];
+    const transferEncoding = request.headers["transfer-encoding"];
+    const isJsonContentType = typeof contentType === "string" && contentType.includes("application/json");
+    const hasNoBody = contentLength === "0" || (!contentLength && !transferEncoding);
+
+    if (isJsonContentType && hasNoBody) {
+      delete (request.headers as Record<string, unknown>)["content-type"];
+      app.log.info({ reqId: request.id, url: request.url }, "Stripped empty JSON content-type for internal cron");
+    }
+  });
+
+  app.addHook("onRequest", async (request) => {
     (request as any)[REQUEST_START_AT] = process.hrtime.bigint();
   });
 
