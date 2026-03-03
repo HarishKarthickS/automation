@@ -130,21 +130,6 @@ body {
   @apply relative overflow-hidden border-border/80 bg-gradient-to-br from-card via-card to-accent/20 shadow-[0_24px_70px_hsl(var(--foreground)/0.12)];
 }
 
-.hero-surface::after {
-  content: "";
-  position: absolute;
-  inset: -40% -20% auto;
-  height: 65%;
-  transform: rotate(-6deg);
-  background: linear-gradient(
-    90deg,
-    hsl(var(--primary) / 0.16),
-    hsl(var(--warning) / 0.1),
-    transparent
-  );
-  pointer-events: none;
-}
-
 .stat-card {
   @apply border-border/80 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md;
 }

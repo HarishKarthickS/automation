@@ -27,7 +27,8 @@ export const corsPlugin = fp(async (app) => {
             return;
           }
 
-          originCallback(new Error("Origin not allowed"), false);
+          app.log.warn({ origin }, "Blocked CORS origin");
+          originCallback(null, false);
         },
         credentials: true,
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
