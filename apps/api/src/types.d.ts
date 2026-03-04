@@ -6,6 +6,9 @@ declare module "fastify" {
       id: string;
       email: string;
       name: string;
+      role: "user" | "admin";
+      suspended: boolean;
+      isAdmin: boolean;
     };
     authSession?: {
       id: string;

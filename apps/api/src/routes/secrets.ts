@@ -5,6 +5,8 @@ import { requireAuth } from "../middleware/requireAuth.js";
 import { getAutomationById } from "../services/automations.service.js";
 import { deleteSecret, listSecretKeys, upsertSecret } from "../services/secrets.service.js";
 import { toSecretDTO } from "../utils/serializers.js";
+import { setOnboardingStepCompleted } from "../services/onboarding.service.js";
+import { trackProductEvent } from "../services/product-events.service.js";
 
 const automationIdParams = z.object({ id: z.string().uuid() });
 const secretParams = z.object({ id: z.string().uuid(), key: z.string() });
@@ -18,6 +20,8 @@ export const secretRoutes: FastifyPluginAsync = async (app) => {
 
     await getAutomationById(request.authUser!.id, id);
     const secret = await upsertSecret(id, input);
+    await setOnboardingStepCompleted(request.authUser!.id, "add_secret");
+    await trackProductEvent(request.authUser!.id, "secret_added", { automationId: id, key: input.key });
 
     reply.code(201).send({ secret: toSecretDTO(secret) });
   });

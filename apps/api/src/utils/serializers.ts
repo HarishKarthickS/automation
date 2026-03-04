@@ -42,6 +42,8 @@ export function toRunDTO(row: any): RunDTO {
     durationMs: row.durationMs,
     output: row.output,
     error: row.error,
+    failureCategory: row.failureCategory ?? null,
+    failureRetriable: row.failureRetriable ?? null,
     exitCode: row.exitCode,
     triggeredBy: row.triggeredBy
   };

@@ -1,5 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { AutomationDTO, CreateAutomationInput, UpdateAutomationInput, RunDTO, TemplateDTO } from "@automation/shared";
+import type {
+  AdminOverviewDTO,
+  AutomationDTO,
+  CreateAutomationInput,
+  KpiSummaryDTO,
+  OnboardingStatusDTO,
+  ReliabilitySummaryDTO,
+  RunDTO,
+  TemplateDTO,
+  UpdateAutomationInput
+} from "@automation/shared";
 import { apiFetch } from "@/lib/api";
 
 const automationsKeys = {
@@ -91,6 +101,112 @@ export function useRun(runId: string) {
     queryKey: runsKeys.detail(runId),
     queryFn: () => apiFetch<{ run: RunDTO }>(`/runs/${runId}`, { skipCsrf: true }),
     enabled: !!runId
+  });
+}
+
+export function useReliabilitySummary() {
+  return useQuery({
+    queryKey: ["reliability", "summary"] as const,
+    queryFn: () => apiFetch<{ summary: ReliabilitySummaryDTO }>("/reliability/summary", { skipCsrf: true })
+  });
+}
+
+export function useOnboardingStatus() {
+  return useQuery({
+    queryKey: ["onboarding", "status"] as const,
+    queryFn: () => apiFetch<{ status: OnboardingStatusDTO }>("/onboarding/status", { skipCsrf: true })
+  });
+}
+
+export function useCompleteOnboardingStep() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (step: OnboardingStatusDTO["steps"][number]["id"]) =>
+      apiFetch<{ status: OnboardingStatusDTO }>("/onboarding/step", {
+        method: "POST",
+        body: { step, completed: true }
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["onboarding", "status"] });
+    }
+  });
+}
+
+export function useKpiSummary() {
+  return useQuery({
+    queryKey: ["metrics", "summary"] as const,
+    queryFn: () =>
+      apiFetch<{ kpi: KpiSummaryDTO; onboarding: OnboardingStatusDTO }>("/metrics/summary", {
+        skipCsrf: true
+      })
+  });
+}
+
+export function useAdminOverview() {
+  return useQuery({
+    queryKey: ["admin", "overview"] as const,
+    queryFn: () => apiFetch<AdminOverviewDTO>("/admin/overview", { skipCsrf: true })
+  });
+}
+
+export function useAdminUsers() {
+  return useQuery({
+    queryKey: ["admin", "users"] as const,
+    queryFn: () => apiFetch<{ items: Array<{ id: string; email: string; name: string; role: string; suspended: boolean }> }>("/admin/users", { skipCsrf: true })
+  });
+}
+
+export function useAdminAutomations() {
+  return useQuery({
+    queryKey: ["admin", "automations"] as const,
+    queryFn: () =>
+      apiFetch<{ items: Array<{ id: string; name: string; userId: string; enabled: boolean; updatedAt: string }> }>(
+        "/admin/automations",
+        { skipCsrf: true }
+      )
+  });
+}
+
+export function useAdminRuns() {
+  return useQuery({
+    queryKey: ["admin", "runs"] as const,
+    queryFn: () =>
+      apiFetch<{ items: Array<{ id: string; automationId: string; status: string; startedAt: string; attempt: number }> }>(
+        "/admin/runs",
+        { skipCsrf: true }
+      )
+  });
+}
+
+export function useAdminTemplates() {
+  return useQuery({
+    queryKey: ["admin", "templates"] as const,
+    queryFn: () =>
+      apiFetch<{ items: Array<{ id: string; name: string; ownerUserId: string; isPublished: boolean; updatedAt: string }> }>(
+        "/admin/templates",
+        { skipCsrf: true }
+      )
+  });
+}
+
+export function useAdminAuditLogs() {
+  return useQuery({
+    queryKey: ["admin", "audit"] as const,
+    queryFn: () =>
+      apiFetch<{ items: Array<{ id: string; action: string; resourceType: string; resourceId: string; reason: string; createdAt: string }> }>(
+        "/admin/audit-logs",
+        { skipCsrf: true }
+      )
+  });
+}
+
+export function useAdminPreflight() {
+  return useMutation({
+    mutationFn: (input: { action: string; resourceType: string; resourceId: string; reason: string }) =>
+      apiFetch<{ token: string; expiresInSeconds: number }>("/admin/actions/preflight", {
+        method: "POST",
+        body: input
+      })
   });
 }
 

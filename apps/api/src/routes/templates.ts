@@ -5,6 +5,8 @@ import { requireAuth } from "../middleware/requireAuth.js";
 import { cloneTemplateForUser, getTemplateById, listTemplates } from "../services/templates.service.js";
 import { toTemplateDTO } from "../utils/serializers.js";
 import { getCachedAsync, invalidateByPrefix, setCached } from "../utils/memoryCache.js";
+import { trackProductEvent } from "../services/product-events.service.js";
+import { setOnboardingStepCompleted } from "../services/onboarding.service.js";
 
 const templateParams = z.object({ id: z.string().uuid() });
 const TEMPLATE_LIST_CACHE_TTL_MS = 10;
@@ -62,6 +64,9 @@ export const templateRoutes: FastifyPluginAsync = async (app) => {
       input.nameOverride,
       input.timezoneOverride
     );
+    await setOnboardingStepCompleted(request.authUser!.id, "create_automation");
+    await setOnboardingStepCompleted(request.authUser!.id, "configure_schedule");
+    await trackProductEvent(request.authUser!.id, "template_cloned", { templateId: id, automationId: cloned.id });
     await invalidateByPrefix("templates:");
 
     reply.code(201).send({ automationId: cloned.id });

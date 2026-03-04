@@ -2,6 +2,7 @@ import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { db, pool } from "./db/client.js";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { shutdownQueue, startDueAutomationsWorker } from "./queue/redisQueue.js";
 
 const app = createApp();
 
@@ -32,6 +33,7 @@ async function start() {
       host: "0.0.0.0"
     });
 
+    await startDueAutomationsWorker();
     app.log.info(`API listening on port ${env.PORT}`);
   } catch (error) {
     app.log.error(error, "Failed to start API");
@@ -42,6 +44,7 @@ async function start() {
 start();
 
 const shutdown = async () => {
+  await shutdownQueue();
   await app.close();
   await pool.end();
   process.exit(0);

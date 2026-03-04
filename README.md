@@ -71,8 +71,21 @@ Production-grade Cron-as-a-Service + Node code runner SaaS.
   - `GET /api/v1/templates`
   - `GET /api/v1/templates/:id`
   - `POST /api/v1/templates/:id/clone`
+- Admin:
+  - `GET /api/v1/admin/overview`
+  - `GET /api/v1/admin/users`
+  - `PATCH /api/v1/admin/users/:id`
+  - `GET /api/v1/admin/automations`
+  - `PATCH /api/v1/admin/automations/:id`
+  - `GET /api/v1/admin/runs`
+  - `GET /api/v1/admin/templates`
+  - `GET /api/v1/admin/audit-logs`
+  - `POST /api/v1/admin/actions/preflight`
 - Scheduler (internal):
   - `POST /api/v1/internal/run-due-automations`
+  - `GET /api/v1/internal/observability/metrics`
+  - `GET /api/v1/internal/observability/alerts`
+  - Returns `202 Accepted` with initiation payload; execution runs in background.
 
 ## API Integration Examples
 
@@ -107,6 +120,8 @@ const automation = await fetch(`${API_BASE}/api/v1/automations`, {
 - Secrets are encrypted server-side with AES-256-GCM and never returned in plaintext.
 - Executor isolates runs in temporary directories, limits output bytes, enforces timeout, and cleans up files.
 - Internal scheduler endpoint requires bearer token.
+- Due scheduler triggers are enqueued into Redis list queue (`REDIS_DUE_QUEUE`, default `queue:run_due_automations`).
+- If enqueue fails, API falls back to in-process async execution.
 
 ## Common Startup Error
 
@@ -152,12 +167,14 @@ const automation = await fetch(`${API_BASE}/api/v1/automations`, {
 - `NODE_ENV`
 - `PORT`
 - `DATABASE_URL`
+- `ADMIN_EMAILS` (optional bootstrap admins, comma-separated)
 - `BETTER_AUTH_SECRET`
 - `BETTER_AUTH_URL`
 - `FRONTEND_ORIGIN`
 - `CORS_ORIGINS`
 - `MASTER_ENCRYPTION_KEY`
 - `INTERNAL_CRON_TOKEN`
+- `REDIS_DUE_QUEUE` (optional, default `queue:run_due_automations`)
 - `MAX_CODE_SIZE_BYTES`
 - `MAX_OUTPUT_BYTES`
 - `DEFAULT_TIMEOUT_SECONDS`
@@ -165,7 +182,12 @@ const automation = await fetch(`${API_BASE}/api/v1/automations`, {
 - `EXECUTION_CONCURRENCY`
 - `PER_USER_CONCURRENT_RUNS`
 - `PER_USER_DAILY_RUN_LIMIT`
+- `MAX_RUN_ATTEMPTS`
 - `RUN_RETENTION_DAYS`
+- `OBS_ALERT_MIN_SUCCESS_RATE_24H`
+- `OBS_ALERT_MAX_EXHAUSTED_RETRIES_24H`
+- `OBS_ALERT_MAX_QUEUE_DEPTH`
+- `OBS_ALERT_MAX_SCHEDULER_LAG_MINUTES`
 
 ### Web
 

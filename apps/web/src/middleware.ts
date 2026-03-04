@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/automations"];
+const PROTECTED_PREFIXES = ["/dashboard", "/automations", "/admin"];
 const SESSION_COOKIE_NAMES = ["caas.session_token", "__Secure-caas.session_token"];
 
 export async function middleware(request: NextRequest) {
@@ -25,5 +25,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/automations/:path*"]
+  matcher: ["/dashboard/:path*", "/automations/:path*", "/admin/:path*"]
 };

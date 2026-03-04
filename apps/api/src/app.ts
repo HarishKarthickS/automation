@@ -13,6 +13,9 @@ import { secretRoutes } from "./routes/secrets.js";
 import { runRoutes } from "./routes/runs.js";
 import { templateRoutes } from "./routes/templates.js";
 import { internalRoutes } from "./routes/internal.js";
+import { onboardingRoutes } from "./routes/onboarding.js";
+import { metricsRoutes } from "./routes/metrics.js";
+import { adminRoutes } from "./routes/admin.js";
 import { HttpError } from "./utils/errors.js";
 
 const REQUEST_START_AT = Symbol("requestStartAt");
@@ -102,6 +105,9 @@ export function createApp() {
     api.register(secretRoutes, { prefix: "/api/v1" });
     api.register(runRoutes, { prefix: "/api/v1" });
     api.register(templateRoutes, { prefix: "/api/v1" });
+    api.register(onboardingRoutes, { prefix: "/api/v1" });
+    api.register(metricsRoutes, { prefix: "/api/v1" });
+    api.register(adminRoutes, { prefix: "/api/v1" });
     api.register(internalRoutes, { prefix: "/api/v1" });
   });
 

@@ -1,5 +1,6 @@
 import type { FastifyRequest } from "fastify";
 import { auth } from "./betterAuth.js";
+import { env } from "../config/env.js";
 
 const SESSION_CACHE_TTL_MS = 5_000;
 const MAX_SESSION_CACHE_ENTRIES = 5_000;
@@ -18,6 +19,9 @@ const sessionCache = new Map<
             id: string;
             email: string;
             name: string;
+            role: "user" | "admin";
+            suspended: boolean;
+            isAdmin: boolean;
           };
         }
       | null;
@@ -73,7 +77,12 @@ export async function getSessionFromRequest(request: FastifyRequest) {
     user: {
       id: sessionResult.user.id,
       email: sessionResult.user.email,
-      name: sessionResult.user.name
+      name: sessionResult.user.name,
+      role: ((sessionResult.user as any).role === "admin" ? "admin" : "user") as "user" | "admin",
+      suspended: Boolean((sessionResult.user as any).suspended),
+      isAdmin:
+        (sessionResult.user as any).role === "admin" ||
+        env.adminEmails.includes(String(sessionResult.user.email || "").toLowerCase())
     }
   };
 

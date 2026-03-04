@@ -7,6 +7,7 @@ import type { RunDTO } from "@automation/shared";
 import { useRequireSession } from "@/lib/session";
 import { useRuns } from "@/hooks/use-api";
 import { RunTable } from "@/components/runs/run-table";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -36,9 +37,9 @@ export default function AutomationRunsPage() {
           <h1 className="font-serif text-4xl">Run History</h1>
           <p className="text-sm text-muted-foreground">Execution timeline, outputs, and failures.</p>
         </div>
-        <Link href={`/automations/${params.id}`} className="text-sm text-accent hover:underline">
-          Back to automation
-        </Link>
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/automations/${params.id}`}>Back to automation</Link>
+        </Button>
       </div>
 
       {error && <p className="text-sm text-destructive">Failed to load runs</p>}

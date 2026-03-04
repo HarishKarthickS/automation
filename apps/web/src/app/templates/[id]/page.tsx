@@ -61,7 +61,7 @@ export default function TemplateDetailPage() {
 
   return (
     <section className="page-shell space-y-6 py-8">
-      <div className="panel space-y-3 p-6">
+      <div className="hero-surface space-y-3 rounded-2xl border border-border/80 p-6">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Public Template</p>
         <h1 className="font-serif text-4xl">{template.name}</h1>
         <p className="text-sm text-muted-foreground">{template.description || "No description"}</p>

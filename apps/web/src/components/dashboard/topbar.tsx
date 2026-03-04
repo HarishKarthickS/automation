@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, LayoutDashboard, FileCode } from "lucide-react";
+import { LogOut, LayoutDashboard, FileCode, Shield } from "lucide-react";
 
 export function TopBar() {
   const router = useRouter();
@@ -67,6 +67,19 @@ export function TopBar() {
               <FileCode className="h-4 w-4" />
               Templates
             </Link>
+            {session.user?.isAdmin && (
+              <Link
+                href="/admin"
+                className={`flex items-center gap-2 rounded-xl px-3 py-2 transition-colors ${
+                  pathname?.startsWith("/admin")
+                    ? "bg-secondary text-secondary-foreground"
+                    : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                }`}
+              >
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
           </nav>
         </div>
 

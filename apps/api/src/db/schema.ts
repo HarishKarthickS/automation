@@ -26,6 +26,8 @@ export const users = pgTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
+  role: text("role").notNull().default("user"),
+  suspended: boolean("suspended").notNull().default(false),
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -159,6 +161,8 @@ export const runs = pgTable(
     durationMs: integer("duration_ms"),
     output: text("output").notNull().default(""),
     error: text("error"),
+    failureCategory: text("failure_category"),
+    failureRetriable: boolean("failure_retriable"),
     exitCode: integer("exit_code"),
     triggeredBy: runTriggeredByEnum("triggered_by").notNull().default("schedule")
   },
@@ -200,5 +204,67 @@ export const templates = pgTable(
     publishedIdx: index("templates_published_idx").on(table.isPublished, table.publishedAt),
     ownerIdx: index("templates_owner_idx").on(table.ownerUserId)
   })
+);
+
+export const onboardingProgress = pgTable("onboarding_progress", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  completedSteps: text("completed_steps")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
+  dismissed: boolean("dismissed").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+export const productEvents = pgTable(
+  "product_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    eventType: text("event_type").notNull(),
+    metadata: text("metadata").notNull().default("{}"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => ({
+    userCreatedIdx: index("product_events_user_created_idx").on(table.userId, table.createdAt),
+    typeCreatedIdx: index("product_events_type_created_idx").on(table.eventType, table.createdAt)
+  })
+);
+
+export const adminAuditLogs = pgTable(
+  "admin_audit_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    adminUserId: text("admin_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    action: text("action").notNull(),
+    resourceType: text("resource_type").notNull(),
+    resourceId: text("resource_id").notNull(),
+    reason: text("reason").notNull(),
+    beforeJson: text("before_json"),
+    afterJson: text("after_json"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => ({
+    adminCreatedIdx: index("admin_audit_logs_admin_created_idx").on(table.adminUserId, table.createdAt),
+    resourceIdx: index("admin_audit_logs_resource_idx").on(table.resourceType, table.resourceId)
+  })
+);
+
+export const adminSettings = pgTable(
+  "admin_settings",
+  {
+    key: text("key").primaryKey(),
+    value: text("value").notNull(),
+    updatedByUserId: text("updated_by_user_id")
+      .references(() => users.id, { onDelete: "set null" }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  }
 );
 

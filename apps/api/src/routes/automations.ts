@@ -15,6 +15,8 @@ import { limits } from "../security/limits.js";
 import { toAutomationDTO } from "../utils/serializers.js";
 import { triggerManualRun } from "../scheduler/runDueAutomations.js";
 import { invalidateByPrefix } from "../utils/memoryCache.js";
+import { setOnboardingStepCompleted } from "../services/onboarding.service.js";
+import { trackProductEvent } from "../services/product-events.service.js";
 
 const idParamSchema = z.object({ id: z.string().uuid() });
 
@@ -29,6 +31,9 @@ export const automationRoutes: FastifyPluginAsync = async (app) => {
     }
 
     const created = await createAutomation(request.authUser!.id, input);
+    await setOnboardingStepCompleted(request.authUser!.id, "create_automation");
+    await setOnboardingStepCompleted(request.authUser!.id, "configure_schedule");
+    await trackProductEvent(request.authUser!.id, "automation_created", { automationId: created.id });
     reply.code(201).send({ automation: toAutomationDTO(created) });
   });
 
@@ -85,6 +90,8 @@ export const automationRoutes: FastifyPluginAsync = async (app) => {
   app.post("/automations/:id/trigger", async (request, reply) => {
     const { id } = idParamSchema.parse(request.params);
     const run = await triggerManualRun(id, request.authUser!.id);
+    await setOnboardingStepCompleted(request.authUser!.id, "trigger_manual_run");
+    await trackProductEvent(request.authUser!.id, "manual_run_triggered", { automationId: id, runId: run.id });
     reply.code(202).send({ runId: run.id });
   });
 };

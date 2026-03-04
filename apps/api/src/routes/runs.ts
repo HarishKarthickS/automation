@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { paginationSchema } from "@automation/shared";
 import { requireAuth } from "../middleware/requireAuth.js";
-import { getRunById, listRunsByAutomation } from "../services/runs.service.js";
+import { getReliabilitySummary, getRunById, listRunsByAutomation } from "../services/runs.service.js";
 import { toRunDTO } from "../utils/serializers.js";
 
 const automationParams = z.object({ id: z.string().uuid() });
@@ -29,6 +29,11 @@ export const runRoutes: FastifyPluginAsync = async (app) => {
     const { id } = runParams.parse(request.params);
     const run = await getRunById(request.authUser!.id, id);
     return { run: toRunDTO(run) };
+  });
+
+  app.get("/reliability/summary", async (request) => {
+    const summary = await getReliabilitySummary(request.authUser!.id, 24);
+    return { summary };
   });
 };
 

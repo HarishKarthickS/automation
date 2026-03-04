@@ -11,7 +11,7 @@ interface TemplateCardProps {
 
 export function TemplateCard({ template }: TemplateCardProps) {
   return (
-    <Card className="group transition-all hover:-translate-y-1 hover:shadow-lg">
+    <Card className="group overflow-hidden border-border/80 bg-card/95 transition-all hover:-translate-y-1 hover:shadow-lg">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <CardTitle className="font-serif text-lg">{template.name}</CardTitle>
@@ -24,7 +24,7 @@ export function TemplateCard({ template }: TemplateCardProps) {
         </p>
       </CardContent>
       <CardFooter className="flex items-center justify-between pt-0">
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <User className="h-3 w-3" />
             {template.ownerName}
@@ -37,7 +37,7 @@ export function TemplateCard({ template }: TemplateCardProps) {
             {template.cronExpr}
           </Badge>
         </div>
-        <Button asChild variant="outline" size="sm" className="opacity-0 transition-opacity group-hover:opacity-100">
+        <Button asChild variant="outline" size="sm">
           <Link href={`/templates/${template.id}`} prefetch>
             <FileCode className="mr-2 h-4 w-4" />
             View

@@ -9,6 +9,9 @@ interface SessionPayload {
     id: string;
     email: string;
     name: string;
+    role: "user" | "admin";
+    suspended: boolean;
+    isAdmin: boolean;
   } | null;
   session: {
     id: string;
