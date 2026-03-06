@@ -1,6 +1,6 @@
 # Automiq
 
-Production-grade Cron-as-a-Service + Node code runner SaaS.
+Production-grade Cron-as-a-Service + multi-runtime code runner SaaS.
 
 ## Stack
 
@@ -21,6 +21,7 @@ Production-grade Cron-as-a-Service + Node code runner SaaS.
 - Automation CRUD with cron schedule and timezone
 - Encrypted per-automation secrets (AES-256-GCM)
 - Safe subprocess execution with timeout + output limits + cleanup
+- Multi-runtime execution support for C++, Java, Python, Go, Rust (Node.js legacy compatibility)
 - Run history/logs and manual trigger
 - Internal scheduler endpoint (`/api/v1/internal/run-due-automations`)
 - Public template publishing and clone workflow
@@ -71,6 +72,8 @@ Production-grade Cron-as-a-Service + Node code runner SaaS.
   - `GET /api/v1/templates`
   - `GET /api/v1/templates/:id`
   - `POST /api/v1/templates/:id/clone`
+- Runtimes:
+  - `GET /api/v1/runtimes`
 - Admin:
   - `GET /api/v1/admin/overview`
   - `GET /api/v1/admin/users`
@@ -86,6 +89,8 @@ Production-grade Cron-as-a-Service + Node code runner SaaS.
   - `GET /api/v1/internal/observability/metrics`
   - `GET /api/v1/internal/observability/alerts`
   - Returns `202 Accepted` with initiation payload; execution runs in background.
+- Dashboard:
+  - `GET /api/v1/dashboard/overview`
 
 ## API Integration Examples
 
@@ -102,8 +107,8 @@ const automation = await fetch(`${API_BASE}/api/v1/automations`, {
   },
   body: JSON.stringify({
     name: "heartbeat",
-    code: "console.log('alive')",
-    runtime: "nodejs20",
+    code: "print('alive')",
+    runtime: "python312",
     cronExpr: "*/5 * * * *",
     timezone: "UTC",
     timeoutSeconds: 30,
@@ -183,11 +188,20 @@ const automation = await fetch(`${API_BASE}/api/v1/automations`, {
 - `PER_USER_CONCURRENT_RUNS`
 - `PER_USER_DAILY_RUN_LIMIT`
 - `MAX_RUN_ATTEMPTS`
+- `DUE_AUTOMATIONS_BATCH_SIZE`
 - `RUN_RETENTION_DAYS`
 - `OBS_ALERT_MIN_SUCCESS_RATE_24H`
 - `OBS_ALERT_MAX_EXHAUSTED_RETRIES_24H`
 - `OBS_ALERT_MAX_QUEUE_DEPTH`
 - `OBS_ALERT_MAX_SCHEDULER_LAG_MINUTES`
+- `ENABLED_RUNTIMES` (comma-separated runtime ids)
+- `DEPENDENCY_ALLOWLIST_MODE` (`strict` or `relaxed`)
+- `DEPENDENCY_MAX_COUNT`
+- `DEPENDENCY_MAX_TOTAL_CHARS`
+- `DEPENDENCY_INSTALL_TIMEOUT_SECONDS`
+- `PYTHON_ALLOWED_PACKAGES` (comma-separated, used in strict mode)
+- `GO_ALLOWED_MODULES` (comma-separated, used in strict mode)
+- `RUST_ALLOWED_CRATES` (comma-separated, used in strict mode)
 
 ### Web
 
@@ -203,4 +217,8 @@ Run API tests:
 Run full workspace tests:
 
 - `pnpm test`
+
+## Runtime Docs (MkDocs)
+
+Runtime and sandbox documentation is provided via MkDocs in `docs/` with config at `mkdocs.yml`.
 

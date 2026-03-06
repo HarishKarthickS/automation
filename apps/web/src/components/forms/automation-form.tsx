@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { AutomationDTO } from "@automation/shared";
-import { automationCreateSchema, automationUpdateSchema } from "@automation/shared";
+import { automationCreateSchema, automationUpdateSchema, type RuntimeId } from "@automation/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,6 +58,50 @@ const FALLBACK_TIMEZONES = [
 
 const IDLE_PROMPT_MS = 30_000;
 const AUTOSAVE_COUNTDOWN_SECONDS = 10;
+const RUNTIME_OPTIONS: Array<{ value: RuntimeId; label: string; hint: string }> = [
+  { value: "cpp23", label: "C++23", hint: "Compiled with g++ and executed in sandbox" },
+  { value: "java21", label: "Java 21", hint: "Compiled with javac and run with java" },
+  { value: "python312", label: "Python 3.12", hint: "Executed with python runtime" },
+  { value: "go122", label: "Go 1.22", hint: "Built and run with go toolchain" },
+  { value: "rust183", label: "Rust 1.83", hint: "Compiled with rustc and executed" }
+];
+const LEGACY_RUNTIME_OPTIONS: Array<{ value: RuntimeId; label: string; hint: string }> = [
+  ...RUNTIME_OPTIONS,
+  { value: "nodejs20", label: "Node.js 20 (Legacy)", hint: "Legacy runtime for existing automations" }
+];
+const CODE_SNIPPETS: Record<RuntimeId, string> = {
+  cpp23: [
+    "#include <iostream>",
+    "",
+    "int main() {",
+    "  std::cout << \"hello from C++ automation\" << std::endl;",
+    "  return 0;",
+    "}"
+  ].join("\n"),
+  java21: [
+    "public class Main {",
+    "  public static void main(String[] args) {",
+    "    System.out.println(\"hello from Java automation\");",
+    "  }",
+    "}"
+  ].join("\n"),
+  python312: "print('hello from Python automation')",
+  go122: [
+    "package main",
+    "",
+    "import \"fmt\"",
+    "",
+    "func main() {",
+    "  fmt.Println(\"hello from Go automation\")",
+    "}"
+  ].join("\n"),
+  rust183: [
+    "fn main() {",
+    "    println!(\"hello from Rust automation\");",
+    "}"
+  ].join("\n"),
+  nodejs20: "console.log(`hello from automation at ${new Date().toISOString()}`);"
+};
 
 type SaveReason = "manual" | "idle-autosave" | "leave-autosave";
 type PromptReason = "idle" | "leave";
@@ -71,7 +115,7 @@ interface FormPayload {
   timeoutSeconds: number;
   enabled: boolean;
   code: string;
-  runtime: "nodejs20";
+  runtime: RuntimeId;
   tags: string[];
 }
 
@@ -134,8 +178,9 @@ export function AutomationForm({ mode, automation }: AutomationFormProps) {
   const [timeoutSeconds, setTimeoutSeconds] = useState(automation?.timeoutSeconds ?? 30);
   const [enabled, setEnabled] = useState(automation?.enabled ?? true);
   const [tags, setTags] = useState((automation?.tags ?? []).join(", "));
+  const [runtime, setRuntime] = useState<RuntimeId>(automation?.runtime ?? "python312");
   const [code, setCode] = useState(
-    automation?.code ?? "console.log(`hello from automation at ${new Date().toISOString()}`);"
+    automation?.code ?? CODE_SNIPPETS.python312
   );
 
   const createAutomation = useCreateAutomation();
@@ -147,22 +192,8 @@ export function AutomationForm({ mode, automation }: AutomationFormProps) {
   );
 
   const timezoneOptions = useMemo(() => {
-    const detected =
-      typeof Intl !== "undefined"
-        ? Intl.DateTimeFormat().resolvedOptions().timeZone
-        : undefined;
-
+    const detected = typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : undefined;
     let zones = FALLBACK_TIMEZONES;
-    if (typeof Intl !== "undefined" && "supportedValuesOf" in Intl) {
-      try {
-        const supported = (Intl as any).supportedValuesOf("timeZone") as string[];
-        if (Array.isArray(supported) && supported.length > 0) {
-          zones = supported;
-        }
-      } catch {
-        zones = FALLBACK_TIMEZONES;
-      }
-    }
 
     if (detected && !zones.includes(detected)) {
       zones = [detected, ...zones];
@@ -206,10 +237,10 @@ export function AutomationForm({ mode, automation }: AutomationFormProps) {
       timeoutSeconds: Number(timeoutSeconds),
       enabled,
       code,
-      runtime: "nodejs20",
+      runtime,
       tags: parsedTags
     }),
-    [code, description, enabled, name, parsedTags, selectedCron, timeoutSeconds, timezone]
+    [code, description, enabled, name, parsedTags, runtime, selectedCron, timeoutSeconds, timezone]
   );
 
   const [lastSavedPayload, setLastSavedPayload] = useState<FormPayload>({
@@ -219,8 +250,8 @@ export function AutomationForm({ mode, automation }: AutomationFormProps) {
     timezone: automation?.timezone ?? "UTC",
     timeoutSeconds: automation?.timeoutSeconds ?? 30,
     enabled: automation?.enabled ?? true,
-    code: automation?.code ?? "console.log(`hello from automation at ${new Date().toISOString()}`);",
-    runtime: "nodejs20",
+    code: automation?.code ?? CODE_SNIPPETS[automation?.runtime ?? "python312"],
+    runtime: automation?.runtime ?? "python312",
     tags: parseTags((automation?.tags ?? []).join(", "))
   });
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
@@ -247,8 +278,24 @@ export function AutomationForm({ mode, automation }: AutomationFormProps) {
     setTimeoutSeconds(payload.timeoutSeconds);
     setEnabled(payload.enabled);
     setTags(payload.tags.join(", "));
+    setRuntime(payload.runtime);
     setCode(payload.code);
   }, []);
+
+  const runtimeOptions = useMemo(
+    () => (mode === "edit" && automation?.runtime === "nodejs20" ? LEGACY_RUNTIME_OPTIONS : RUNTIME_OPTIONS),
+    [automation?.runtime, mode]
+  );
+
+  const onRuntimeChange = (nextRuntime: RuntimeId) => {
+    if (nextRuntime === runtime) {
+      return;
+    }
+    setRuntime(nextRuntime);
+    if (!code.trim() || code === CODE_SNIPPETS[runtime]) {
+      setCode(CODE_SNIPPETS[nextRuntime]);
+    }
+  };
 
   const continueNavigation = useCallback(
     (intent: PendingNavigationIntent) => {
@@ -609,10 +656,28 @@ export function AutomationForm({ mode, automation }: AutomationFormProps) {
               Code
             </CardTitle>
             <CardDescription>
-              Write the JavaScript code to execute
+              Select a runtime and write the code to execute
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 space-y-2">
+              <Label>Runtime</Label>
+              <Select value={runtime} onValueChange={(value) => onRuntimeChange(value as RuntimeId)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select runtime" />
+                </SelectTrigger>
+                <SelectContent>
+                  {runtimeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {runtimeOptions.find((option) => option.value === runtime)?.hint}
+              </p>
+            </div>
             <Textarea
               rows={18}
               value={code}
@@ -621,7 +686,7 @@ export function AutomationForm({ mode, automation }: AutomationFormProps) {
               required
             />
             <p className="mt-2 text-xs text-muted-foreground">
-              Runs in Node.js 20 with your encrypted environment variables injected at runtime.
+              Runs in the selected runtime with your encrypted environment variables injected at runtime.
             </p>
           </CardContent>
         </Card>

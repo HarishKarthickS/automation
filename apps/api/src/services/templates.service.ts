@@ -1,9 +1,11 @@
 import { and, asc, desc, eq, ilike, lt, or, sql } from "drizzle-orm";
+import type { RuntimeId } from "@automation/shared";
 import { db } from "../db/client.js";
 import { automations, templates, users } from "../db/schema.js";
 import { computeNextRunOrThrow } from "../scheduler/scheduleValidation.js";
 import { HttpError } from "../utils/errors.js";
 import { getCachedAsync, setCached, invalidateByPrefix } from "../utils/memoryCache.js";
+import { assertRuntimeEnabled } from "../security/runtimePolicy.js";
 
 const LIST_CACHE_TTL = 60;
 
@@ -104,6 +106,7 @@ export async function cloneTemplateForUser(
   timezoneOverride?: string
 ) {
   const row = await getTemplateById(templateId);
+  assertRuntimeEnabled(row.template.runtime as RuntimeId);
   const timezone = timezoneOverride ?? row.template.timezone;
 
   const [createdAutomation] = await db

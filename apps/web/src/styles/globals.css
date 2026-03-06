@@ -76,29 +76,9 @@
   body {
     @apply bg-background text-foreground antialiased;
     background-image:
-      radial-gradient(circle at 8% 6%, hsl(174 52% 72% / 0.28), transparent 32%),
-      radial-gradient(circle at 85% 0%, hsl(30 68% 76% / 0.24), transparent 30%),
-      radial-gradient(circle at 50% 100%, hsl(var(--surface-3) / 0.28), transparent 45%),
+      radial-gradient(circle at 10% 0%, hsl(174 52% 72% / 0.18), transparent 28%),
+      radial-gradient(circle at 90% 0%, hsl(30 68% 76% / 0.14), transparent 24%),
       linear-gradient(180deg, hsl(var(--background)), hsl(var(--surface-1)));
-    background-attachment: fixed;
-  }
-
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: -1;
-    background:
-      repeating-linear-gradient(
-        0deg,
-        hsl(var(--border) / 0.06) 0px,
-        hsl(var(--border) / 0.06) 1px,
-        transparent 1px,
-        transparent 3px
-      );
-    mix-blend-mode: soft-light;
-    opacity: 0.45;
   }
 }
 
@@ -108,10 +88,9 @@ body {
 }
 
 .grid-backdrop {
-  background-image:
-    linear-gradient(to right, hsl(var(--border) / 0.3) 1px, transparent 1px),
-    linear-gradient(to bottom, hsl(var(--border) / 0.3) 1px, transparent 1px);
-  background-size: 38px 38px;
+  background-image: linear-gradient(to bottom, hsl(var(--border) / 0.16), hsl(var(--border) / 0));
+  background-size: 100% 120px;
+  background-repeat: no-repeat;
 }
 
 .page-shell {
@@ -119,11 +98,7 @@ body {
 }
 
 .panel {
-  @apply rounded-2xl border bg-card shadow-[0_18px_60px_hsl(var(--foreground)/0.08)] transition-all duration-200;
-}
-
-.panel:hover {
-  @apply shadow-[0_24px_68px_hsl(var(--foreground)/0.12)];
+  @apply rounded-2xl border bg-card shadow-sm transition-colors duration-150;
 }
 
 .hero-surface {
@@ -131,7 +106,7 @@ body {
 }
 
 .stat-card {
-  @apply border-border/80 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md;
+  @apply border-border/80 bg-card shadow-sm transition-colors duration-150 hover:bg-accent/20;
 }
 
 .fade-in {

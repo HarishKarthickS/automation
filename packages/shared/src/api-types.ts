@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import type { RuntimeId } from "./constants.js";
 import {
   automationCreateSchema,
   automationUpdateSchema,
@@ -36,7 +37,7 @@ export interface AutomationDTO {
   name: string;
   description: string | null;
   code: string;
-  runtime: "nodejs20";
+  runtime: RuntimeId;
   cronExpr: string;
   timezone: string;
   nextRunAt: string;
@@ -108,6 +109,22 @@ export interface KpiSummaryDTO {
   firstSuccessLatencyMinutes: number | null;
 }
 
+export interface DashboardOverviewDTO {
+  counts: {
+    totalAutomations: number;
+    activeAutomations: number;
+    pausedAutomations: number;
+  };
+  reliability: ReliabilitySummaryDTO;
+  kpi: KpiSummaryDTO;
+  automations: AutomationDTO[];
+  needsAttention: Array<{
+    id: string;
+    name: string;
+    updatedAt: string;
+  }>;
+}
+
 export interface SessionUserDTO {
   id: string;
   email: string;
@@ -136,7 +153,7 @@ export interface TemplateDTO {
   name: string;
   description: string | null;
   code: string;
-  runtime: "nodejs20";
+  runtime: RuntimeId;
   cronExpr: string;
   timezone: string;
   timeoutSeconds: number;

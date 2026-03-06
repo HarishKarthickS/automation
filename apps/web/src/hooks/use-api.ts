@@ -3,6 +3,7 @@ import type {
   AdminOverviewDTO,
   AutomationDTO,
   CreateAutomationInput,
+  DashboardOverviewDTO,
   KpiSummaryDTO,
   OnboardingStatusDTO,
   ReliabilitySummaryDTO,
@@ -107,7 +108,8 @@ export function useRun(runId: string) {
 export function useReliabilitySummary() {
   return useQuery({
     queryKey: ["reliability", "summary"] as const,
-    queryFn: () => apiFetch<{ summary: ReliabilitySummaryDTO }>("/reliability/summary", { skipCsrf: true })
+    queryFn: () => apiFetch<{ summary: ReliabilitySummaryDTO }>("/reliability/summary", { skipCsrf: true }),
+    staleTime: 30_000
   });
 }
 
@@ -138,7 +140,18 @@ export function useKpiSummary() {
     queryFn: () =>
       apiFetch<{ kpi: KpiSummaryDTO; onboarding: OnboardingStatusDTO }>("/metrics/summary", {
         skipCsrf: true
-      })
+      }),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false
+  });
+}
+
+export function useDashboardOverview() {
+  return useQuery({
+    queryKey: ["dashboard", "overview"] as const,
+    queryFn: () => apiFetch<{ overview: DashboardOverviewDTO }>("/dashboard/overview", { skipCsrf: true }),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false
   });
 }
 

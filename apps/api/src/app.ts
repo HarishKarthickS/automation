@@ -16,6 +16,7 @@ import { internalRoutes } from "./routes/internal.js";
 import { onboardingRoutes } from "./routes/onboarding.js";
 import { metricsRoutes } from "./routes/metrics.js";
 import { adminRoutes } from "./routes/admin.js";
+import { runtimeRoutes } from "./routes/runtimes.js";
 import { HttpError } from "./utils/errors.js";
 
 const REQUEST_START_AT = Symbol("requestStartAt");
@@ -107,6 +108,7 @@ export function createApp() {
     api.register(templateRoutes, { prefix: "/api/v1" });
     api.register(onboardingRoutes, { prefix: "/api/v1" });
     api.register(metricsRoutes, { prefix: "/api/v1" });
+    api.register(runtimeRoutes, { prefix: "/api/v1" });
     api.register(adminRoutes, { prefix: "/api/v1" });
     api.register(internalRoutes, { prefix: "/api/v1" });
   });

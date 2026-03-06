@@ -17,6 +17,7 @@ import { triggerManualRun } from "../scheduler/runDueAutomations.js";
 import { invalidateByPrefix } from "../utils/memoryCache.js";
 import { setOnboardingStepCompleted } from "../services/onboarding.service.js";
 import { trackProductEvent } from "../services/product-events.service.js";
+import { assertRuntimeEnabled } from "../security/runtimePolicy.js";
 
 const idParamSchema = z.object({ id: z.string().uuid() });
 
@@ -25,6 +26,7 @@ export const automationRoutes: FastifyPluginAsync = async (app) => {
 
   app.post("/automations", async (request, reply) => {
     const input = automationCreateSchema.parse(request.body);
+    assertRuntimeEnabled(input.runtime);
     if (Buffer.byteLength(input.code, "utf8") > limits.maxCodeSizeBytes) {
       reply.code(400).send({ message: "Code size exceeds maximum allowed bytes" });
       return;
@@ -58,6 +60,9 @@ export const automationRoutes: FastifyPluginAsync = async (app) => {
   app.put("/automations/:id", async (request, reply) => {
     const { id } = idParamSchema.parse(request.params);
     const input = automationUpdateSchema.parse(request.body);
+    if (input.runtime) {
+      assertRuntimeEnabled(input.runtime);
+    }
     if (typeof input.code === "string" && Buffer.byteLength(input.code, "utf8") > limits.maxCodeSizeBytes) {
       reply.code(400).send({ message: "Code size exceeds maximum allowed bytes" });
       return;

@@ -4,7 +4,8 @@ import { automations, runs } from "../db/schema.js";
 import { limits } from "../security/limits.js";
 import { computeNextRun } from "./cronParser.js";
 import { getRetryDelayMs } from "./retryPolicy.js";
-import { executeNodeAutomation } from "../executor/runner.js";
+import { executeAutomation } from "../executor/runner.js";
+import type { RuntimeId } from "@automation/shared";
 import { assertUserExecutionCapacity } from "./dueSelector.js";
 import { getDecryptedSecretsMap } from "../services/secrets.service.js";
 import { sendRunFailedAfterRetriesEmail } from "../services/notifications.service.js";
@@ -25,13 +26,14 @@ interface ClaimedRun {
     ownerEmail: string;
     ownerName: string;
     code: string;
+    runtime: RuntimeId;
     timeoutSeconds: number;
     notifyOnFinalFailure: boolean;
     runOrigin: "schedule" | "manual";
   };
 }
 
-const DEFAULT_BATCH_SIZE = 20;
+const DEFAULT_BATCH_SIZE = limits.dueAutomationsBatchSize;
 
 function classifyRunFailure(
   status: "succeeded" | "failed" | "timed_out" | "killed",
@@ -63,6 +65,7 @@ async function claimDueAutomations(batchSize = DEFAULT_BATCH_SIZE): Promise<Clai
         a.name,
         a.user_id,
         a.code,
+        a.runtime,
         a.timeout_seconds,
         a.cron_expr,
         a.timezone,
@@ -82,6 +85,7 @@ async function claimDueAutomations(batchSize = DEFAULT_BATCH_SIZE): Promise<Clai
       name: string;
       user_id: string;
       code: string;
+      runtime: RuntimeId;
       timeout_seconds: number;
       cron_expr: string;
       timezone: string;
@@ -143,6 +147,7 @@ async function claimDueAutomations(batchSize = DEFAULT_BATCH_SIZE): Promise<Clai
           ownerEmail: row.owner_email,
           ownerName: row.owner_name,
           code: row.code,
+          runtime: row.runtime,
           timeoutSeconds: row.timeout_seconds,
           notifyOnFinalFailure: true,
           runOrigin: "schedule"
@@ -196,8 +201,9 @@ async function executeRun(claimed: ClaimedRun): Promise<void> {
 
     const envVars = await getDecryptedSecretsMap(current.automation.id);
 
-    const result = await executeNodeAutomation({
+    const result = await executeAutomation({
       runId: current.runId,
+      runtime: current.automation.runtime,
       code: current.automation.code,
       timeoutSeconds: Math.min(current.automation.timeoutSeconds, limits.maxTimeoutSeconds),
       envVars
@@ -364,6 +370,7 @@ export async function triggerManualRun(automationId: string, userId: string) {
       ownerEmail: "",
       ownerName: "",
       code: automation.code,
+      runtime: automation.runtime as RuntimeId,
       timeoutSeconds: automation.timeoutSeconds,
       notifyOnFinalFailure: false,
       runOrigin: "manual"

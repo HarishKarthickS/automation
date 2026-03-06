@@ -1,0 +1,23 @@
+site_name: Automiq Runtime Docs
+site_description: Multi-runtime automation execution and operations guide
+theme:
+  name: material
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Overview: getting-started/overview.md
+  - Runtimes:
+    - C++23: runtimes/cpp.md
+    - Java 21: runtimes/java.md
+    - Python 3.12: runtimes/python.md
+    - Go 1.22: runtimes/go.md
+    - Rust 1.83: runtimes/rust.md
+  - Security:
+    - Sandbox Model: security/sandbox.md
+    - Dependency Policy: security/dependency-policy.md
+  - API:
+    - Runtime API: api/runtimes.md
+  - Operations:
+    - Runtime Rollout: operations/runtime-rollout.md
+  - Troubleshooting:
+    - Common Failures: troubleshooting/common-failures.md

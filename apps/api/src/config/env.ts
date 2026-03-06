@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { z } from "zod";
+import { RUNTIMES, type RuntimeId } from "@automation/shared";
 
 function isValidMasterKey(value: string): boolean {
   try {
@@ -27,10 +28,11 @@ const envSchema = z.object({
   MAX_OUTPUT_BYTES: z.coerce.number().int().positive().default(256 * 1024),
   DEFAULT_TIMEOUT_SECONDS: z.coerce.number().int().min(1).default(30),
   MAX_TIMEOUT_SECONDS: z.coerce.number().int().min(1).default(120),
-  EXECUTION_CONCURRENCY: z.coerce.number().int().min(1).max(20).default(3),
-  PER_USER_CONCURRENT_RUNS: z.coerce.number().int().min(1).max(20).default(2),
+  EXECUTION_CONCURRENCY: z.coerce.number().int().min(1).max(20).default(1),
+  PER_USER_CONCURRENT_RUNS: z.coerce.number().int().min(1).max(20).default(1),
   PER_USER_DAILY_RUN_LIMIT: z.coerce.number().int().min(1).default(200),
   MAX_RUN_ATTEMPTS: z.coerce.number().int().min(1).default(2),
+  DUE_AUTOMATIONS_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(5),
   RUN_RETENTION_DAYS: z.coerce.number().int().min(1).default(30),
   OBS_ALERT_MIN_SUCCESS_RATE_24H: z.coerce.number().min(0).max(100).default(95),
   OBS_ALERT_MAX_EXHAUSTED_RETRIES_24H: z.coerce.number().int().min(0).default(5),
@@ -40,7 +42,15 @@ const envSchema = z.object({
   MAIL_PASS: z.string().min(1).optional(),
   CORS_ORIGINS: z.string().optional(),
   AUTO_MIGRATE: z.enum(["true", "false"]).optional(),
-  REDIS_DUE_QUEUE: z.string().min(1).default("queue:run_due_automations")
+  REDIS_DUE_QUEUE: z.string().min(1).default("queue:run_due_automations"),
+  ENABLED_RUNTIMES: z.string().default("cpp23,java21,python312,go122,rust183,nodejs20"),
+  DEPENDENCY_ALLOWLIST_MODE: z.enum(["strict", "relaxed"]).default("relaxed"),
+  DEPENDENCY_MAX_COUNT: z.coerce.number().int().min(0).max(100).default(20),
+  DEPENDENCY_MAX_TOTAL_CHARS: z.coerce.number().int().min(1).max(4096).default(512),
+  DEPENDENCY_INSTALL_TIMEOUT_SECONDS: z.coerce.number().int().min(1).max(300).default(30),
+  PYTHON_ALLOWED_PACKAGES: z.string().optional(),
+  GO_ALLOWED_MODULES: z.string().optional(),
+  RUST_ALLOWED_CRATES: z.string().optional()
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -61,5 +71,17 @@ export const env = {
   isProd: parsed.data.NODE_ENV === "production",
   autoMigrate:
     parsed.data.AUTO_MIGRATE === "true" ||
-    (parsed.data.AUTO_MIGRATE === undefined && parsed.data.NODE_ENV !== "production")
+    (parsed.data.AUTO_MIGRATE === undefined && parsed.data.NODE_ENV !== "production"),
+  enabledRuntimes: parsed.data.ENABLED_RUNTIMES.split(",")
+    .map((value) => value.trim())
+    .filter((value): value is RuntimeId => (RUNTIMES as readonly string[]).includes(value)),
+  pythonAllowedPackages: parsed.data.PYTHON_ALLOWED_PACKAGES
+    ? parsed.data.PYTHON_ALLOWED_PACKAGES.split(",").map((value) => value.trim()).filter(Boolean)
+    : [],
+  goAllowedModules: parsed.data.GO_ALLOWED_MODULES
+    ? parsed.data.GO_ALLOWED_MODULES.split(",").map((value) => value.trim()).filter(Boolean)
+    : [],
+  rustAllowedCrates: parsed.data.RUST_ALLOWED_CRATES
+    ? parsed.data.RUST_ALLOWED_CRATES.split(",").map((value) => value.trim()).filter(Boolean)
+    : []
 };

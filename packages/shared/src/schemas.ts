@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { LIMITS, RUN_STATUSES, TRIGGERED_BY } from "./constants.js";
+import { LIMITS, RUNTIMES, RUN_STATUSES, TRIGGERED_BY } from "./constants.js";
 
 export const paginationSchema = z.object({
   cursor: z.string().uuid().optional(),
@@ -13,7 +13,7 @@ export const automationCreateSchema = z.object({
     .string()
     .min(1)
     .max(LIMITS.MAX_CODE_SIZE_BYTES, "Code is too large"),
-  runtime: z.literal("nodejs20").default("nodejs20"),
+  runtime: z.enum(RUNTIMES).default("nodejs20"),
   cronExpr: z.string().min(5).max(120),
   timezone: z.string().min(1).max(100),
   timeoutSeconds: z
@@ -34,7 +34,7 @@ export const automationUpdateSchema = z.object({
     .min(1)
     .max(LIMITS.MAX_CODE_SIZE_BYTES, "Code is too large")
     .optional(),
-  runtime: z.literal("nodejs20").optional(),
+  runtime: z.enum(RUNTIMES).optional(),
   cronExpr: z.string().min(5).max(120).optional(),
   timezone: z.string().min(1).max(100).optional(),
   timeoutSeconds: z.number().int().min(1).max(LIMITS.MAX_TIMEOUT_SECONDS).optional(),
