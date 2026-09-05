@@ -1,6 +1,6 @@
 # Automiq
 
-Production-grade Cron-as-a-Service + multi-runtime code runner SaaS.
+Personal automation workspace: cron-style jobs plus a multi-runtime code runner. Not a production SaaS product.
 
 ## Stack
 
