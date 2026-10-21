@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const deps = vi.hoisted(() => ({ lpush: vi.fn(), run: vi.fn(), error: vi.fn() }));
-vi.mock("../src/db/redis.js", () => ({ redis: { lpush: deps.lpush } }));
-vi.mock("../src/scheduler/runDueAutomations.js", () => ({ runDueAutomations: deps.run }));
+const deps = vi.hoisted(() => ({ publish: vi.fn(), run: vi.fn(), error: vi.fn() }));
+vi.mock("../src/db/redis.js", () => ({ redis: { publish: deps.publish } }));
+vi.mock("../src/scheduler/runDueAutomations.js", () => ({ runDueAutomations: deps.run, cancelActiveRuns: vi.fn() }));
 vi.mock("../src/utils/logger.js", () => ({ logger: { info: vi.fn(), error: deps.error } }));
 import { enqueueDueAutomationsJob } from "../src/queue/redisQueue.js";
 import { env } from "../src/config/env.js";
@@ -15,10 +15,10 @@ beforeEach(() => {
 
 describe("scheduler queue fallback", () => {
   it("enqueues a timestamped job without running the fallback when Redis works", async () => {
-    deps.lpush.mockResolvedValue(1);
+    deps.publish.mockResolvedValue(1);
     const result = await enqueueDueAutomationsJob();
     expect(result).toMatchObject({ initiated: true, mode: "redis" });
-    const [queue, raw] = deps.lpush.mock.calls[0];
+    const [queue, raw] = deps.publish.mock.calls[0];
     expect(queue).toBe(env.REDIS_DUE_QUEUE);
     expect(JSON.parse(raw)).toEqual({ jobId: result.jobId, triggeredAt: expect.any(String) });
     expect(Number.isNaN(Date.parse(JSON.parse(raw).triggeredAt))).toBe(false);
@@ -27,7 +27,7 @@ describe("scheduler queue fallback", () => {
   });
 
   it("acknowledges Redis failure before dispatching exactly one asynchronous fallback", async () => {
-    deps.lpush.mockRejectedValue(new Error("Redis unavailable"));
+    deps.publish.mockRejectedValue(new Error("Redis unavailable"));
     const result = await enqueueDueAutomationsJob();
     expect(result).toMatchObject({ initiated: true, mode: "fallback", jobId: expect.any(String) });
     expect(deps.run).not.toHaveBeenCalled();
@@ -36,7 +36,7 @@ describe("scheduler queue fallback", () => {
   });
 
   it("logs fallback failure without an unhandled rejection or duplicate execution", async () => {
-    deps.lpush.mockRejectedValue(new Error("Redis unavailable"));
+    deps.publish.mockRejectedValue(new Error("Redis unavailable"));
     const failure = new Error("scheduler unavailable");
     deps.run.mockRejectedValue(failure);
     const result = await enqueueDueAutomationsJob();

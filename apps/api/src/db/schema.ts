@@ -158,6 +158,13 @@ export const runs = pgTable(
       .references(() => automations.id, { onDelete: "cascade" }),
     status: runStatusEnum("status").notNull().default("queued"),
     attempt: integer("attempt").notNull().default(1),
+    queuedAt: timestamp("queued_at", { withTimezone: true }).notNull().defaultNow(),
+    availableAt: timestamp("available_at", { withTimezone: true }).notNull().defaultNow(),
+    admittedAt: timestamp("admitted_at", { withTimezone: true }),
+    leaseToken: uuid("lease_token"),
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+    parentRunId: uuid("parent_run_id"),
+    executionSnapshot: text("execution_snapshot"),
     startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
     finishedAt: timestamp("finished_at", { withTimezone: true }),
     durationMs: integer("duration_ms"),
@@ -170,7 +177,10 @@ export const runs = pgTable(
   },
   (table) => ({
     automationStartedIdx: index("runs_automation_started_idx").on(table.automationId, table.startedAt),
-    statusStartedIdx: index("runs_status_started_idx").on(table.status, table.startedAt)
+    statusStartedIdx: index("runs_status_started_idx").on(table.status, table.startedAt),
+    pendingIdx: index("runs_pending_idx").on(table.status, table.availableAt),
+    parentUnique: uniqueIndex("runs_parent_unique_idx").on(table.parentRunId),
+    admissionIdx: index("runs_admission_idx").on(table.admittedAt)
   })
 );
 
