@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
-import type { RuntimeId } from "@automation/shared";
+import { RUNTIMES, type RuntimeId } from "@automation/shared";
 import { cleanupRunTempDir, createRunTempDir } from "./tempDir.js";
 import { sanitizeEnv } from "./sanitizeEnv.js";
 import { limits } from "../security/limits.js";
@@ -232,6 +232,15 @@ export async function executeAutomation(input: RunnerInput): Promise<RunnerResul
   const tempDir = await createRunTempDir(input.runId);
 
   try {
+    if (!(RUNTIMES as readonly string[]).includes(input.runtime)) {
+      return {
+        status: "failed",
+        output: "",
+        error: `Unsupported runtime: ${input.runtime}`,
+        exitCode: null,
+        durationMs: Date.now() - startedAt
+      };
+    }
     if (!limits.enabledRuntimes.includes(input.runtime)) {
       return {
         status: "failed",
