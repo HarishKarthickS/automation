@@ -13,6 +13,7 @@ function isValidMasterKey(value: string): boolean {
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
   PORT: z.coerce.number().int().positive().default(8080),
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url().default("redis://localhost:6379"),

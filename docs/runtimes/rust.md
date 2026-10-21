@@ -1,5 +1,8 @@
 # Rust 1.83 Runtime (`rust183`)
 
+Production execution requires an approved account, a configured Docker host and an installed/probed runtime image. The runtime API reports the actual compiler/interpreter version; persistent IDs retain their historical suffixes. Network package installation is disabled in production. Inline dependency examples below apply only to trusted development subprocess mode. See [execution setup](../operations/isolated-execution.md).
+
+
 ## Toolchain
 
 - Compiler: `rustc` (edition 2021)

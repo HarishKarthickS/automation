@@ -28,7 +28,7 @@ The fixture server is not part of the app. Deployment updates after merge.
 - Frontend: Next.js App Router + TypeScript + Tailwind (`apps/web`)
 - Backend: Fastify + Better Auth + Drizzle (`apps/api`)
 - Database: PostgreSQL (Railway)
-- Scheduler: Render Cron hitting protected internal endpoint
+- Scheduler: durable PostgreSQL tasks with a polling worker; optional protected cron wake-up
 
 ## Monorepo Layout
 
@@ -41,7 +41,7 @@ The fixture server is not part of the app. Deployment updates after merge.
 - Email/password signup and login via Better Auth sessions
 - Automation CRUD with cron schedule and timezone
 - Encrypted per-automation secrets (AES-256-GCM)
-- Subprocess execution with env allowlist, timeouts and output limits + cleanup
+- Approved Docker execution with filesystem/network boundaries and CPU, memory, process, timeout and output limits (production execution is disabled until configured)
 - Multi-runtime execution support for Node.js, C++, Java, Python, Go, and Rust
 - Run history/logs and manual trigger
 - Internal scheduler endpoint (`/api/v1/internal/run-due-automations`)
@@ -63,7 +63,7 @@ The fixture server is not part of the app. Deployment updates after merge.
    - `pnpm -C apps/api db:generate`
    - `pnpm -C apps/api db:migrate`
    - In development, migrations auto-run at startup by default.
-   - In production, set `AUTO_MIGRATE=true` only if you want startup migration behavior.
+   - Startup migrations run under an advisory lock by default; `AUTO_MIGRATE=false` requires an explicit migration before rollout.
 5. Start apps
    - API: `pnpm -C apps/api dev`
    - Web: `pnpm -C apps/web dev`
@@ -103,23 +103,14 @@ const automation = await fetch(`${API_BASE}/api/v1/automations`, {
 
 ## Security model
 
-- Session cookies are `httpOnly`, secure in production, and cross-site compatible.
-- CSRF protection uses double-submit token for non-auth mutating routes.
-- Secrets are encrypted server-side with AES-256-GCM and never returned in plaintext.
-- Jobs use **subprocess execution with env allowlist, timeouts and output limits**.
-  Each run gets a temporary working directory with cleanup; this is not a security sandbox.
-- Jobs run with the API host user's filesystem permissions and outbound network access.
-  There are no per-job CPU, memory, disk or network quotas, containers or namespaces.
-  Timeout/output termination targets the direct child; descendant processes may survive.
-- The env allowlist prevents automatic inheritance of server credentials. It does not
-  prevent host file access. Jobs can read, print or transmit their injected secrets;
-  retained run output has no automatic secret redaction.
-- Run only code and dependencies you trust. This personal workspace is not designed
-  to isolate hostile tenants. See the [execution model](docs/security/sandbox.md).
-- Internal scheduler endpoint requires bearer token.
-- Due scheduler triggers are enqueued into Redis list queue (`REDIS_DUE_QUEUE`, default `queue:run_due_automations`).
-- If enqueue fails, API falls back to in-process async execution. This fallback is
-  not durable across process restarts; Redis list consumption is not an exactly-once queue.
+- Production execution defaults to **disabled** until an isolated Docker host is configured. Signup does not grant execution; an administrator approves each account. Suspension/revocation is enforced by workers too.
+- Docker jobs run as non-root with no host mounts, network, capabilities or privilege escalation; root filesystems are read-only. CPU, memory, process count, writable tmpfs, execution duration and captured output are bounded. Cancellation removes the whole container.
+- Only installed/probed runtime images are advertised. Dependencies must be preinstalled in reviewed images; isolated jobs cannot download packages.
+- Development `trusted-subprocess` execution uses an environment allowlist, timeouts and output limits. It shares host permissions and is rejected in production. It is not a sandbox.
+- Secrets use versioned AES-256-GCM encryption at rest. API reads return metadata, not plaintext. A job can read or print its own injected secrets; logs are not automatically redacted. Retain historical keys for backups and follow the [rotation procedure](docs/operations/key-rotation.md).
+- Sessions use secure httpOnly cookies; application mutations require CSRF tokens. Private routes enforce ownership. Admin access and confirmation tokens are separate controls.
+- Runs, retry deadlines and capacity reservations are durable in PostgreSQL. Redis is optional for caches/notifications. Recovery is at least once; use downstream idempotency for external effects. See [durable scheduling](docs/operations/durable-scheduler.md).
+- This remains a personal project, not a claim of protection against all hostile tenants or container/kernel vulnerabilities. Keep the execution host patched and dedicated. See the [execution model](docs/security/sandbox.md) and [deployment verification](docs/operations/deployment-verification.md).
 
 ## Common Startup Error
 
@@ -142,13 +133,11 @@ const automation = await fetch(`${API_BASE}/api/v1/automations`, {
 2. Root dir: `.`
 3. Build command: `pnpm install --frozen-lockfile && pnpm --filter @automation/api build`
 4. Start command: `pnpm --filter @automation/api start`
-5. Health check path: `/health`
-6. Set environment variables from `apps/api/.env.example`.
-7. Create Render Cron Job:
-   - URL: `https://<api-domain>/api/v1/internal/run-due-automations`
-   - Method: `POST`
-   - Header: `Authorization: Bearer <INTERNAL_CRON_TOKEN>`
-   - Frequency: every minute
+5. Health check path: `/ready`; `/health` is liveness only.
+6. Set environment variables from `apps/api/.env.example`; preserve existing encryption keys.
+7. Verify `/api/v1/version` matches the merged commit and `/api/v1/ready` reports schema/worker status.
+8. Keep `EXECUTION_MODE=disabled` on the native Render Node service until a Docker-capable execution host is configured. See [isolated execution](docs/operations/isolated-execution.md).
+9. The PostgreSQL worker polls schedules. Optional external wake-ups use `render-cron.yaml`, a supported `type: cron` service. It is not needed for correctness.
 
 ### Vercel Web
 
@@ -171,6 +160,8 @@ const automation = await fetch(`${API_BASE}/api/v1/automations`, {
 - `FRONTEND_ORIGIN`
 - `CORS_ORIGINS`
 - `MASTER_ENCRYPTION_KEY`
+- `EXECUTION_MODE` (`disabled` by default in production; `docker` after provisioning)
+- `ENCRYPTION_KEY_ID` / `ENCRYPTION_KEYRING` (optional versioned rotation keys)
 - `INTERNAL_CRON_TOKEN`
 - `REDIS_DUE_QUEUE` (optional, default `queue:run_due_automations`)
 - `MAX_CODE_SIZE_BYTES`
@@ -207,12 +198,9 @@ Run API tests:
 
 - `pnpm -C apps/api test`
 
-The [Tests workflow](.github/workflows/test.yml) runs API tests and API typechecking
-on pull requests and pushes to main. Tests cover session/CSRF guards, secret-route
-ownership and metadata responses, Redis enqueue/fallback behavior, encryption,
-cron parsing, and real subprocess execution controls. Route suites mock the auth
-provider, persistence and Redis rate limiter; they do not verify live signup/login,
-PostgreSQL queries or Redis server behavior.
+The [Tests workflow](.github/workflows/test.yml) runs API regressions, real PostgreSQL migration/concurrency/recovery tests, an encrypted backup/restore drill, six Docker runtime smoke jobs, web typechecking/build and Chromium browser regressions. Local tests skip database/container suites unless their explicit environment flags are set. Route mocks are complemented by real service integration checks; they do not establish that production infrastructure has been provisioned.
+
+Browser checks: `pnpm -C apps/web build` then `pnpm -C apps/web exec playwright test` (install Chromium with `pnpm -C apps/web exec playwright install chromium`). See [verification details](docs/operations/deployment-verification.md).
 
 Run full workspace tests:
 

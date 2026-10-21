@@ -36,6 +36,36 @@ jobs:
       - run: pnpm -C apps/api test
       - run: pnpm --filter @automation/shared build
       - run: pnpm -C apps/api typecheck
+      - name: Exercise encrypted backup and restore
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          pnpm -C apps/api exec tsx test/restore-fixture.ts seed
+          docker exec "$PG_CONTAINER" pg_dump -U postgres -Fc automation_test > restore-test.dump
+          docker exec "$PG_CONTAINER" createdb -U postgres automation_restore
+          docker exec -i "$PG_CONTAINER" pg_restore -U postgres -d automation_restore < restore-test.dump
+          DATABASE_URL=postgres://postgres:postgres@localhost:5432/automation_restore pnpm -C apps/api exec tsx test/restore-fixture.ts verify
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @automation/shared build
+      - run: pnpm -C apps/web typecheck
+      - run: pnpm -C apps/web build
+      - run: pnpm -C apps/web exec playwright install --with-deps chromium
+      - run: pnpm -C apps/web exec playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failure-traces
+          path: apps/web/test-results
 
   sandbox:
     runs-on: ubuntu-latest

@@ -3,13 +3,15 @@ import { env } from "../config/env.js";
 import { logger } from "../utils/logger.js";
 
 const redisInstance = new Redis(env.REDIS_URL, {
-  maxRetriesPerRequest: 3,
+  maxRetriesPerRequest: 1,
+  commandTimeout: 1000,
+  enableOfflineQueue: false,
   retryStrategy(times: number) {
     const delay = Math.min(times * 50, 2000);
     return delay;
   },
   lazyConnect: true,
-  connectTimeout: 10000
+  connectTimeout: 3000
 });
 
 redisInstance.on("connect", () => {
@@ -21,14 +23,6 @@ redisInstance.on("error", (err: Error) => {
 });
 
 export const redis = redisInstance;
-
-redis.on("connect", () => {
-  logger.info("Redis connected");
-});
-
-redis.on("error", (err: Error) => {
-  logger.error({ err }, "Redis error");
-});
 
 export async function connectRedis() {
   try {

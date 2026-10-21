@@ -6,18 +6,29 @@ services:
     rootDir: .
     buildCommand: pnpm install --frozen-lockfile && pnpm --filter @automation/api build
     startCommand: pnpm --filter @automation/api start
-    healthCheckPath: /health
+    healthCheckPath: /ready
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: "22"
       - key: PORT
-        value: 10000
-
-cronJobs:
-  - name: run-due-automations
-    schedule: "* * * * *"
-    method: POST
-    path: /api/v1/internal/run-due-automations
-    headers:
-      - key: Authorization
-        value: Bearer ${INTERNAL_CRON_TOKEN}
+        value: "10000"
+      - key: AUTO_MIGRATE
+        value: "true"
+      - key: EXECUTION_MODE
+        value: disabled
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: BETTER_AUTH_SECRET
+        sync: false
+      - key: BETTER_AUTH_URL
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: MASTER_ENCRYPTION_KEY
+        sync: false
+      - key: INTERNAL_CRON_TOKEN
+        sync: false
