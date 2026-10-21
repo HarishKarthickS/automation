@@ -7,7 +7,8 @@ const config: Config = {
     extend: {
       fontFamily: {
         serif: ["var(--font-display)", "serif"],
-        sans: ["var(--font-body)", "sans-serif"]
+        sans: ["var(--font-body)", "sans-serif"],
+        mono: ["var(--font-code)", "monospace"]
       },
       colors: {
         border: "hsl(var(--border))",

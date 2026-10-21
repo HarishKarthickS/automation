@@ -4,11 +4,10 @@ import { useState, useCallback } from "react";
 import { TemplateCard } from "@/components/templates/template-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTemplates } from "@/hooks/use-api";
 import { TemplateCardSkeleton } from "@/components/ui/skeleton";
-import { Search, FileCode, TrendingUp, Clock, WandSparkles } from "lucide-react";
+import { Search, FileCode, TrendingUp, Clock } from "lucide-react";
 import { FeedbackState } from "@/components/ui/feedback-state";
 
 export default function TemplatesPage() {
@@ -24,18 +23,10 @@ export default function TemplatesPage() {
 
   return (
     <section className="page-shell space-y-7 py-8">
-      <Card className="hero-surface overflow-hidden border-border/80">
-        <CardHeader className="pb-6">
-          <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-[0.16em]">
-            <WandSparkles className="h-3.5 w-3.5" />
-            Marketplace
-          </CardDescription>
-          <CardTitle className="mt-1 font-serif text-4xl">Automation Templates</CardTitle>
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            Explore shared scripts and clone them into your personal workspace. Review code before running it.
-          </p>
-        </CardHeader>
-      </Card>
+      <header className="flex flex-col justify-between gap-4 border-b pb-8 sm:flex-row sm:items-end">
+        <div><p className="eyebrow">The script library</p><h1 className="page-heading mt-3">Templates</h1><p className="mt-3 max-w-lg text-sm leading-6 text-muted-foreground">A starting point for your next automation. Read the code, make it yours, then set a schedule.</p></div>
+        <p className="font-mono text-[10px] text-muted-foreground">SHARED SCRIPTS / TRUSTED CODE ONLY</p>
+      </header>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <form onSubmit={handleSearch} className="flex flex-1 gap-2">
@@ -44,7 +35,8 @@ export default function TemplatesPage() {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search templates..."
+              aria-label="Search templates"
+              placeholder="Find a script…"
               className="pl-10"
             />
           </div>

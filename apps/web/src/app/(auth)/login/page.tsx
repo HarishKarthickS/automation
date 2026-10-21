@@ -6,11 +6,17 @@ import Link from "next/link";
 import { loginSchema } from "@/lib/zod";
 import { authClient } from "@/lib/auth-client";
 import { invalidateSessionCache } from "@/lib/session";
+import { AuthIntro } from "@/components/auth-intro";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ShieldCheck, Zap, Activity } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+} from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 function sanitizeNextPath(candidate: string | null): string {
   if (!candidate) {
@@ -59,31 +65,27 @@ export default function LoginPage() {
   };
 
   return (
-    <section className="page-shell grid min-h-[calc(100vh-88px)] items-center gap-6 py-12 lg:grid-cols-2">
-      <Card className="hero-surface hidden lg:block">
-        <CardHeader>
-          <CardDescription className="text-xs uppercase tracking-[0.18em]">Personal Automation Workspace</CardDescription>
-          <CardTitle className="font-serif text-4xl">Your scripts, schedules, and run history in one place.</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-success" /> Encrypted secrets by default</div>
-          <div className="flex items-center gap-2"><Zap className="h-4 w-4 text-warning" /> Fast manual triggers and run history</div>
-          <div className="flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Live visibility into every execution</div>
-        </CardContent>
-      </Card>
+    <section className="page-shell auth-layout">
+      <AuthIntro />
 
-      <Card className="w-full max-w-md border-border/80 lg:justify-self-end">
-        <CardHeader className="space-y-1">
-          <CardTitle className="font-serif text-3xl">Welcome back</CardTitle>
-          <CardDescription>Sign in to monitor runs, update schedules, and manage secrets.</CardDescription>
+      <Card className="auth-form border-0 bg-transparent">
+        <CardHeader className="space-y-3 p-0 pb-8">
+          <p className="eyebrow mb-1">Your workspace awaits</p>
+          <h1 className="text-3xl font-medium tracking-[-0.04em]">
+            Welcome back.
+          </h1>
+          <CardDescription>
+            Sign in to monitor runs, update schedules, and manage secrets.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit} className="space-y-4">
+        <CardContent className="p-0">
+          <form onSubmit={onSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
+                autoComplete="email"
                 placeholder="name@example.com"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
@@ -95,6 +97,7 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
@@ -102,12 +105,15 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+              <div
+                role="alert"
+                className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive"
+              >
                 {error}
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="h-11 w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign in
             </Button>
@@ -115,7 +121,10 @@ export default function LoginPage() {
 
           <div className="mt-5 text-center text-sm text-muted-foreground">
             No account?{" "}
-            <Link href="/signup" className="font-medium text-primary hover:underline">
+            <Link
+              href="/signup"
+              className="font-medium text-primary hover:underline"
+            >
               Create one
             </Link>
           </div>

@@ -15,13 +15,13 @@ Personal automation workspace: cron-style jobs plus a multi-runtime code runner.
 - Suggested walkthrough: create an automation, select a runtime, set a cron schedule,
   trigger a manual run, and inspect the output in run history. Run only trusted code.
 
-Screenshots below show the deployed app's public pages, captured on 21 October 2026.
-They are not authenticated dashboard screenshots. The older marketing copy visible
-in these captures is replaced by this PR; deployment updates after merge.
+Screenshots below show the redesigned local production build. The dashboard uses
+synthetic preview data from a temporary local API fixture, not a production account.
+The fixture server is not part of the app. Deployment updates after merge.
 
-| Sign in | Create account | Public templates |
+| Landing page | Sign in | Workspace (preview data) |
 | --- | --- | --- |
-| ![Sign-in form](docs/images/login.png) | ![Account creation form](docs/images/signup.png) | ![Public templates](docs/images/templates.png) |
+| ![Automation landing page](docs/images/landing.png) | ![Sign-in form](docs/images/login.png) | ![Workspace with preview data](docs/images/workspace-preview.png) |
 
 ## Stack
 

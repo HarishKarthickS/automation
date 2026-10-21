@@ -4,147 +4,168 @@
 
 @layer base {
   :root {
-    --background: 40 42% 96%;
-    --foreground: 177 26% 14%;
-    --card: 42 44% 99%;
-    --card-foreground: 177 26% 15%;
-    --popover: 42 44% 99%;
-    --popover-foreground: 177 26% 15%;
-    --primary: 176 68% 28%;
+    --font-body: "IBM Plex Sans Variable";
+    --font-display: "IBM Plex Sans Variable";
+    --font-code: "IBM Plex Mono";
+    --background: 40 20% 97%;
+    --foreground: 30 8% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 30 8% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 8% 12%;
+    --primary: 18 78% 36%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 36 28% 88%;
-    --secondary-foreground: 177 26% 18%;
-    --muted: 38 30% 90%;
-    --muted-foreground: 180 14% 26%;
-    --accent: 178 42% 87%;
-    --accent-foreground: 177 28% 18%;
-    --destructive: 4 72% 42%;
+    --secondary: 36 12% 93%;
+    --secondary-foreground: 30 8% 16%;
+    --muted: 36 12% 93%;
+    --muted-foreground: 30 5% 42%;
+    --accent: 30 18% 94%;
+    --accent-foreground: 30 8% 12%;
+    --destructive: 0 65% 42%;
     --destructive-foreground: 0 0% 100%;
-    --border: 36 20% 74%;
-    --input: 36 20% 74%;
-    --ring: 176 68% 30%;
-    --chart-1: 176 68% 32%;
-    --chart-2: 24 64% 52%;
-    --chart-3: 196 52% 42%;
-    --chart-4: 44 82% 45%;
-    --chart-5: 340 68% 52%;
-    --radius: 0.85rem;
-    --success: 146 66% 34%;
-    --warning: 36 82% 44%;
-    --surface-1: 40 40% 95%;
-    --surface-2: 36 32% 91%;
-    --surface-3: 179 28% 88%;
+    --border: 36 10% 85%;
+    --input: 36 10% 78%;
+    --ring: 18 78% 36%;
+    --success: 151 45% 30%;
+    --warning: 34 82% 32%;
+    --chart-1: 18 78% 36%;
+    --chart-2: 151 45% 30%;
+    --chart-3: 210 35% 42%;
+    --chart-4: 34 82% 32%;
+    --chart-5: 290 20% 45%;
+    --surface-1: 40 20% 97%;
+    --surface-2: 36 12% 93%;
+    --surface-3: 30 18% 90%;
+    --radius: 0.375rem;
   }
-
   .dark {
-    --background: 183 22% 8%;
-    --foreground: 40 30% 93%;
-    --card: 184 20% 11%;
-    --card-foreground: 40 30% 93%;
-    --popover: 184 20% 11%;
-    --popover-foreground: 40 30% 93%;
-    --primary: 174 64% 44%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 186 20% 18%;
-    --secondary-foreground: 40 28% 88%;
-    --muted: 186 18% 16%;
-    --muted-foreground: 36 18% 80%;
-    --accent: 175 26% 22%;
-    --accent-foreground: 40 30% 90%;
-    --destructive: 4 68% 52%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 185 16% 30%;
-    --input: 185 16% 30%;
-    --ring: 174 64% 44%;
-    --chart-1: 174 64% 48%;
-    --chart-2: 30 72% 56%;
-    --chart-3: 198 60% 56%;
-    --chart-4: 44 82% 57%;
-    --chart-5: 336 62% 58%;
-    --success: 146 64% 46%;
-    --warning: 36 80% 56%;
-    --surface-1: 184 20% 10%;
-    --surface-2: 184 20% 14%;
-    --surface-3: 176 22% 19%;
+    --background: 30 6% 9%;
+    --foreground: 40 12% 91%;
+    --card: 30 5% 12%;
+    --card-foreground: 40 12% 91%;
+    --popover: 30 5% 12%;
+    --popover-foreground: 40 12% 91%;
+    --primary: 23 88% 67%;
+    --primary-foreground: 30 8% 9%;
+    --secondary: 30 4% 17%;
+    --secondary-foreground: 40 12% 91%;
+    --muted: 30 4% 17%;
+    --muted-foreground: 35 6% 63%;
+    --accent: 30 4% 19%;
+    --accent-foreground: 40 12% 91%;
+    --destructive: 0 65% 63%;
+    --destructive-foreground: 0 0% 10%;
+    --border: 30 4% 24%;
+    --input: 30 4% 32%;
+    --ring: 23 88% 67%;
+    --success: 151 42% 62%;
+    --warning: 38 78% 62%;
+    --surface-1: 30 6% 9%;
+    --surface-2: 30 4% 17%;
+    --surface-3: 30 4% 21%;
   }
-}
-
-@layer base {
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground antialiased;
-    background-image:
-      radial-gradient(circle at 10% 0%, hsl(174 52% 72% / 0.18), transparent 28%),
-      radial-gradient(circle at 90% 0%, hsl(30 68% 76% / 0.14), transparent 24%),
-      linear-gradient(180deg, hsl(var(--background)), hsl(var(--surface-1)));
+  }
+  ::selection {
+    background: hsl(var(--primary) / 0.18);
+  }
+  a,
+  button,
+  input,
+  textarea,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 4px;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
   }
 }
-
 html,
 body {
   min-height: 100%;
 }
-
-.grid-backdrop {
-  background-image: linear-gradient(to bottom, hsl(var(--border) / 0.16), hsl(var(--border) / 0));
-  background-size: 100% 120px;
-  background-repeat: no-repeat;
-}
-
 .page-shell {
-  @apply mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8;
+  @apply mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-12;
 }
-
 .panel {
-  @apply rounded-2xl border bg-card shadow-sm transition-colors duration-150;
+  @apply rounded-md border bg-card;
 }
-
 .hero-surface {
-  @apply relative overflow-hidden border-border/80 bg-gradient-to-br from-card via-card to-accent/20 shadow-[0_24px_70px_hsl(var(--foreground)/0.12)];
+  @apply border-border bg-card;
 }
-
 .stat-card {
-  @apply border-border/80 bg-card shadow-sm transition-colors duration-150 hover:bg-accent/20;
+  @apply border-border bg-card;
 }
-
+.eyebrow {
+  @apply font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground;
+}
+.page-heading {
+  @apply text-3xl font-medium tracking-[-0.04em] sm:text-4xl;
+}
+.grid-backdrop {
+  min-height: 100vh;
+}
+.kbd {
+  @apply rounded border bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground;
+}
 .fade-in {
-  animation: fadeInUp 260ms ease-out;
+  animation: fadeInUp 300ms ease-out both;
 }
-
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-
-.kbd {
-  @apply rounded border bg-muted px-2 py-1 text-xs text-muted-foreground;
-}
-
-@layer utilities {
-  .animate-in {
-    animation: animate-in 150ms ease-out;
-  }
-
-  .slide-in-from-bottom {
-    --tw-enter-translate-y: 100%;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-@keyframes animate-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+/* The product specimen is a labeled example, never live account data. */
+.specimen {
+  @apply overflow-hidden rounded-lg border border-border bg-card;
+  box-shadow: 0 16px 48px -32px hsl(var(--foreground) / 0.28);
+}
+.specimen-code {
+  background: #22221f;
+  color: #e7e4dc;
+}
+.specimen-code .comment {
+  color: #b7b3a8;
+}
+.specimen-code .token {
+  color: #eeb187;
+}
+.specimen-code .string {
+  color: #b7d2ae;
+}
+.auth-layout {
+  @apply grid gap-12 py-12 lg:grid-cols-[1.1fr_1fr] lg:gap-20 lg:py-20;
+}
+.auth-note {
+  @apply hidden flex-col justify-between border-r pr-16 lg:flex;
+}
+.auth-form {
+  @apply w-full max-w-[400px] justify-self-center lg:justify-self-end;
 }
