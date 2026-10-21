@@ -125,6 +125,10 @@ export default function DashboardPage() {
           </p>
         </div>
         <AutomationList automations={automations} />
+        <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+          <span>Showing {automations.length} of {overview?.counts.totalAutomations ?? 0}</span>
+          <Button asChild variant="outline"><Link href="/automations">View all automations</Link></Button>
+        </div>
       </div>
       <OnboardingChecklist />
       {kpi && (

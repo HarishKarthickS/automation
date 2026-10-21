@@ -2,7 +2,9 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+
+import { AUTH_CHANGE_EVENT, invalidateSessionCache } from "@/lib/session";
 
 export function QueryProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -15,12 +17,19 @@ export function QueryProvider({ children }: { children: ReactNode }) {
             retry: 1,
             refetchOnWindowFocus: false,
             refetchOnReconnect: true,
-            refetchOnMount: false
+            refetchOnMount: true
           }
         }
       })
   );
 
+  useEffect(() => {
+    const clear = () => { void queryClient.cancelQueries(); queryClient.clear(); };
+    const changedInAnotherTab = (event: StorageEvent) => { if (event.key === AUTH_CHANGE_EVENT) invalidateSessionCache(false); };
+    window.addEventListener(AUTH_CHANGE_EVENT, clear);
+    window.addEventListener("storage", changedInAnotherTab);
+    return () => { window.removeEventListener(AUTH_CHANGE_EVENT, clear); window.removeEventListener("storage", changedInAnotherTab); };
+  }, [queryClient]);
   return (
     <QueryClientProvider client={queryClient}>
       {children}

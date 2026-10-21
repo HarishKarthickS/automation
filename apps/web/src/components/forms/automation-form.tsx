@@ -208,7 +208,7 @@ export function AutomationForm({ mode, automation }: AutomationFormProps) {
     if (detected && detected !== timezone) {
       setTimezone(detected);
     }
-  }, [automation?.timezone, mode, timezone]);
+  }, [automation?.timezone, mode]);
 
   const selectedCron = useMemo(() => {
     if (schedule === "daily_at_time") {
