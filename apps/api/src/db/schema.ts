@@ -28,6 +28,7 @@ export const users = pgTable("user", {
   email: text("email").notNull().unique(),
   role: text("role").notNull().default("user"),
   suspended: boolean("suspended").notNull().default(false),
+  executionApproved: boolean("execution_approved").notNull().default(false),
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -27,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { useCreateAutomation, useUpdateAutomation } from "@/hooks/use-api";
+import { useCreateAutomation, useUpdateAutomation, useRuntimeCapabilities } from "@/hooks/use-api";
 import { toast } from "sonner";
 import { Clock, Code, Play, Settings } from "lucide-react";
 
@@ -280,7 +280,10 @@ export function AutomationForm({ mode, automation }: AutomationFormProps) {
     setCode(payload.code);
   }, []);
 
-  const runtimeOptions = RUNTIME_OPTIONS;
+  const capabilities = useRuntimeCapabilities();
+  const available = new Set(capabilities.data?.items.map((item) => item.id) ?? []);
+  // Existing jobs remain readable even when their worker is temporarily unavailable.
+  const runtimeOptions = RUNTIME_OPTIONS.filter((item) => available.has(item.value) || item.value === runtime);
 
   const onRuntimeChange = (nextRuntime: RuntimeId) => {
     if (nextRuntime === runtime) {
@@ -484,6 +487,7 @@ export function AutomationForm({ mode, automation }: AutomationFormProps) {
   return (
     <>
       <form onSubmit={onSubmit} className="space-y-6">
+      {!capabilities.isLoading && capabilities.data?.items.length === 0 && <p role="status" className="rounded-md border p-3 text-sm text-muted-foreground">{capabilities.data.message ?? "No execution runtime is currently available."} You can save a draft; execution is unavailable.</p>}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

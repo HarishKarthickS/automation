@@ -45,6 +45,7 @@ const envSchema = z.object({
   CORS_ORIGINS: z.string().optional(),
   AUTO_MIGRATE: z.enum(["true", "false"]).optional(),
   REDIS_DUE_QUEUE: z.string().min(1).default("queue:run_due_automations"),
+  EXECUTION_MODE: z.enum(["disabled", "docker", "trusted-subprocess"]).optional(),
   ENABLED_RUNTIMES: z.string().default("cpp23,java21,python312,go122,rust183,nodejs20"),
   DEPENDENCY_ALLOWLIST_MODE: z.enum(["strict", "relaxed"]).default("relaxed"),
   DEPENDENCY_MAX_COUNT: z.coerce.number().int().min(0).max(100).default(20),
@@ -62,7 +63,11 @@ if (!parsed.success) {
   throw new Error(`Invalid environment variables:\n${formatted}`);
 }
 
+if (parsed.data.NODE_ENV === "production" && parsed.data.EXECUTION_MODE === "trusted-subprocess") {
+  throw new Error("Production requires isolated Docker execution; trusted-subprocess is development/test only");
+}
 export const env = {
+  executionMode: parsed.data.EXECUTION_MODE ?? (parsed.data.NODE_ENV === "production" ? "disabled" : "trusted-subprocess"),
   ...parsed.data,
   adminEmails: parsed.data.ADMIN_EMAILS
     ? parsed.data.ADMIN_EMAILS.split(",").map((email) => email.trim().toLowerCase()).filter(Boolean)

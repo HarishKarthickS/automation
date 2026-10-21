@@ -179,7 +179,7 @@ export function useAdminOverview() {
 export function useAdminUsers() {
   return usePrivateQuery({
     queryKey: ["admin", "users"] as const,
-    queryFn: () => apiFetch<{ items: Array<{ id: string; email: string; name: string; role: string; suspended: boolean }> }>("/admin/users", { skipCsrf: true })
+    queryFn: () => apiFetch<{ items: Array<{ id: string; email: string; name: string; role: string; suspended: boolean; executionApproved: boolean }> }>("/admin/users", { skipCsrf: true })
   });
 }
 
@@ -317,4 +317,8 @@ export function useUnpublishAutomation() {
       queryClient.invalidateQueries({ queryKey: templatesKeys.lists() });
     }
   });
+}
+
+export function useRuntimeCapabilities() {
+  return usePrivateQuery({ queryKey: ["runtimes"], queryFn: () => apiFetch<{ items: Array<{ id: import("@automation/shared").RuntimeId; label: string; version: string }>; message: string | null }>("/runtimes", { skipCsrf: true }) });
 }

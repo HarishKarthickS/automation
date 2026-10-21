@@ -41,6 +41,7 @@ const preflightSchema = z.object({
 const updateUserSchema = z.object({
   role: z.enum(["user", "admin"]).optional(),
   suspended: z.boolean().optional(),
+  executionApproved: z.boolean().optional(),
   name: z.string().min(1).max(120).optional(),
   reason: z.string().min(3).max(300).optional()
 });
@@ -96,6 +97,7 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       const updated = await updateUserForAdmin(id, {
       role: input.role,
       suspended: input.suspended,
+      executionApproved: input.executionApproved,
       name: input.name
     });
     await writeAdminAudit({
