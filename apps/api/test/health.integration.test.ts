@@ -1,8 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+vi.mock("../src/plugins/rateLimit.js", async () => {
+  const { default: fp } = await import("fastify-plugin");
+  return { rateLimitPlugin: fp(async () => {}) };
+});
+import { createApp } from "../src/app.js";
 
 describe("health route", () => {
   it("responds on /health", async () => {
-    const { createApp } = await import("../src/app.js");
     const app = createApp();
 
     const response = await app.inject({
