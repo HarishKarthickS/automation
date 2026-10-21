@@ -1,4 +1,4 @@
-import { and, desc, eq, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, lt, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { automations, runs } from "../db/schema.js";
 import { HttpError } from "../utils/errors.js";
@@ -18,7 +18,7 @@ export async function listRunsByAutomation(userId: string, automationId: string,
       .select()
       .from(runs)
       .where(eq(runs.automationId, automationId))
-      .orderBy(desc(runs.startedAt))
+      .orderBy(desc(runs.startedAt), asc(runs.id))
       .limit(limit + 1);
   }
 
@@ -27,11 +27,12 @@ export async function listRunsByAutomation(userId: string, automationId: string,
     .from(runs)
     .where(and(eq(runs.id, cursor), eq(runs.automationId, automationId)));
 
+  if (!cursorRow) throw new HttpError(400, "Pagination cursor no longer exists; restart the list");
   return db
     .select()
     .from(runs)
-    .where(and(eq(runs.automationId, automationId), lt(runs.startedAt, cursorRow?.startedAt ?? new Date())))
-    .orderBy(desc(runs.startedAt))
+    .where(and(eq(runs.automationId, automationId), or(lt(runs.startedAt, cursorRow.startedAt), and(eq(runs.startedAt, cursorRow.startedAt), gt(runs.id, cursor)))))
+    .orderBy(desc(runs.startedAt), asc(runs.id))
     .limit(limit + 1);
 }
 

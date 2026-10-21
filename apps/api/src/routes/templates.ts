@@ -9,8 +9,8 @@ import { trackProductEvent } from "../services/product-events.service.js";
 import { setOnboardingStepCompleted } from "../services/onboarding.service.js";
 
 const templateParams = z.object({ id: z.string().uuid() });
-const TEMPLATE_LIST_CACHE_TTL_MS = 10;
-const TEMPLATE_DETAIL_CACHE_TTL_MS = 30;
+const TEMPLATE_LIST_CACHE_TTL_SECONDS = 10;
+const TEMPLATE_DETAIL_CACHE_TTL_SECONDS = 30;
 
 export const templateRoutes: FastifyPluginAsync = async (app) => {
   app.get("/templates", async (request) => {
@@ -36,7 +36,7 @@ export const templateRoutes: FastifyPluginAsync = async (app) => {
       items,
       nextCursor: hasMore ? items[items.length - 1]?.id ?? null : null
     };
-    await setCached(cacheKey, payload, TEMPLATE_LIST_CACHE_TTL_MS);
+    await setCached(cacheKey, payload, TEMPLATE_LIST_CACHE_TTL_SECONDS);
     return payload;
   });
 
@@ -50,7 +50,7 @@ export const templateRoutes: FastifyPluginAsync = async (app) => {
 
     const row = await getTemplateById(id);
     const payload = { template: toTemplateDTO(row) };
-    await setCached(cacheKey, payload, TEMPLATE_DETAIL_CACHE_TTL_MS);
+    await setCached(cacheKey, payload, TEMPLATE_DETAIL_CACHE_TTL_SECONDS);
     return payload;
   });
 
