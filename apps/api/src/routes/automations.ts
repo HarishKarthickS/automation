@@ -1,3 +1,4 @@
+import { idempotent } from "../utils/idempotency.js";
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { automationCreateSchema, automationUpdateSchema, paginationSchema } from "@automation/shared";
@@ -32,11 +33,11 @@ export const automationRoutes: FastifyPluginAsync = async (app) => {
       return;
     }
 
-    const created = await createAutomation(request.authUser!.id, input);
+    const created = await idempotent(request.authUser!.id, "automation:create", request.headers["idempotency-key"], input, async () => toAutomationDTO(await createAutomation(request.authUser!.id, input)));
     await setOnboardingStepCompleted(request.authUser!.id, "create_automation");
     await setOnboardingStepCompleted(request.authUser!.id, "configure_schedule");
     await trackProductEvent(request.authUser!.id, "automation_created", { automationId: created.id });
-    reply.code(201).send({ automation: toAutomationDTO(created) });
+    reply.code(201).send({ automation: created });
   });
 
   app.get("/automations", async (request) => {

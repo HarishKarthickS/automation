@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger.js";
 import { and, eq, sql } from "drizzle-orm";
 import type { OnboardingStatusDTO, OnboardingStepId, OnboardingStepStateDTO } from "@automation/shared";
 import { db } from "../db/client.js";
@@ -119,28 +120,14 @@ export async function getOnboardingStatus(userId: string): Promise<OnboardingSta
 }
 
 export async function setOnboardingStepCompleted(userId: string, step: OnboardingStepId) {
-  const [saved] = await db
-    .select()
-    .from(onboardingProgress)
-    .where(eq(onboardingProgress.userId, userId));
-
-  const current = new Set<string>(saved?.completedSteps ?? []);
-  current.add(step);
-
-  if (saved) {
-    await db
-      .update(onboardingProgress)
-      .set({
-        completedSteps: Array.from(current),
+  // Onboarding is derived from business rows too; failure must not undo a saved resource.
+  try {
+    await db.insert(onboardingProgress).values({ userId, completedSteps: [step], dismissed: false })
+      .onConflictDoUpdate({ target: onboardingProgress.userId, set: {
+        completedSteps: sql`ARRAY(SELECT DISTINCT unnest(${onboardingProgress.completedSteps} || ARRAY[${step}]::text[]))`,
         updatedAt: new Date()
-      })
-      .where(and(eq(onboardingProgress.userId, userId)));
-    return;
+      } });
+  } catch (error) {
+    logger.warn({ err: error, userId }, "Failed to update derived onboarding progress");
   }
-
-  await db.insert(onboardingProgress).values({
-    userId,
-    completedSteps: Array.from(current),
-    dismissed: false
-  });
 }

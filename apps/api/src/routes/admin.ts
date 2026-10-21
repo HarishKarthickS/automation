@@ -1,3 +1,4 @@
+import { withTransaction } from "../db/client.js";
 import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireAdmin } from "../middleware/requireAdmin.js";
@@ -91,7 +92,8 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       reply.code(404).send({ message: "User not found" });
       return;
     }
-    const updated = await updateUserForAdmin(id, {
+    const updated = await withTransaction(async () => {
+      const updated = await updateUserForAdmin(id, {
       role: input.role,
       suspended: input.suspended,
       name: input.name
@@ -105,11 +107,13 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       before,
       after: updated
     });
+      return updated;
+    });
     return { user: updated };
   });
   app.delete("/admin/users/:id", async (request, reply) => {
     const { id } = userParams.parse(request.params);
-    const preflight = consumeActionPreflight(getPreflightToken(request), {
+    const preflight = await consumeActionPreflight(getPreflightToken(request), {
       action: "user_delete",
       resourceType: "user",
       resourceId: id,
@@ -124,7 +128,8 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       reply.code(404).send({ message: "User not found" });
       return;
     }
-    const deleted = await deleteUserForAdmin(id);
+    const deleted = await withTransaction(async () => {
+      const deleted = await deleteUserForAdmin(id);
     await writeAdminAudit({
       adminUserId: request.authUser!.id,
       action: "user_delete",
@@ -133,6 +138,8 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       reason: preflight.reason,
       before,
       after: deleted
+    });
+      return deleted;
     });
     reply.code(200).send({ deleted: true });
   });
@@ -146,7 +153,8 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       reply.code(404).send({ message: "Automation not found" });
       return;
     }
-    const updated = await updateAutomationForAdmin(id, { name: input.name, enabled: input.enabled });
+    const updated = await withTransaction(async () => {
+      const updated = await updateAutomationForAdmin(id, { name: input.name, enabled: input.enabled });
     await writeAdminAudit({
       adminUserId: request.authUser!.id,
       action: "automation_update",
@@ -156,11 +164,13 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       before,
       after: updated
     });
+      return updated;
+    });
     return { automation: updated };
   });
   app.delete("/admin/automations/:id", async (request, reply) => {
     const { id } = uuidParams.parse(request.params);
-    const preflight = consumeActionPreflight(getPreflightToken(request), {
+    const preflight = await consumeActionPreflight(getPreflightToken(request), {
       action: "automation_delete",
       resourceType: "automation",
       resourceId: id,
@@ -175,7 +185,8 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       reply.code(404).send({ message: "Automation not found" });
       return;
     }
-    const deleted = await deleteAutomationForAdmin(id);
+    const deleted = await withTransaction(async () => {
+      const deleted = await deleteAutomationForAdmin(id);
     await writeAdminAudit({
       adminUserId: request.authUser!.id,
       action: "automation_delete",
@@ -185,13 +196,15 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       before,
       after: deleted
     });
+      return deleted;
+    });
     reply.code(200).send({ deleted: true });
   });
 
   app.get("/admin/runs", async () => ({ items: await listAdminRuns(200) }));
   app.delete("/admin/runs/:id", async (request, reply) => {
     const { id } = uuidParams.parse(request.params);
-    const preflight = consumeActionPreflight(getPreflightToken(request), {
+    const preflight = await consumeActionPreflight(getPreflightToken(request), {
       action: "run_delete",
       resourceType: "run",
       resourceId: id,
@@ -206,7 +219,8 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       reply.code(404).send({ message: "Run not found" });
       return;
     }
-    const deleted = await deleteRunForAdmin(id);
+    const deleted = await withTransaction(async () => {
+      const deleted = await deleteRunForAdmin(id);
     await writeAdminAudit({
       adminUserId: request.authUser!.id,
       action: "run_delete",
@@ -215,6 +229,8 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       reason: preflight.reason,
       before,
       after: deleted
+    });
+      return deleted;
     });
     reply.code(200).send({ deleted: true });
   });
@@ -228,7 +244,8 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       reply.code(404).send({ message: "Template not found" });
       return;
     }
-    const updated = await updateTemplateForAdmin(id, { name: input.name, isPublished: input.isPublished });
+    const updated = await withTransaction(async () => {
+      const updated = await updateTemplateForAdmin(id, { name: input.name, isPublished: input.isPublished });
     await writeAdminAudit({
       adminUserId: request.authUser!.id,
       action: "template_update",
@@ -238,11 +255,13 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       before,
       after: updated
     });
+      return updated;
+    });
     return { template: updated };
   });
   app.delete("/admin/templates/:id", async (request, reply) => {
     const { id } = uuidParams.parse(request.params);
-    const preflight = consumeActionPreflight(getPreflightToken(request), {
+    const preflight = await consumeActionPreflight(getPreflightToken(request), {
       action: "template_delete",
       resourceType: "template",
       resourceId: id,
@@ -257,7 +276,8 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       reply.code(404).send({ message: "Template not found" });
       return;
     }
-    const deleted = await deleteTemplateForAdmin(id);
+    const deleted = await withTransaction(async () => {
+      const deleted = await deleteTemplateForAdmin(id);
     await writeAdminAudit({
       adminUserId: request.authUser!.id,
       action: "template_delete",
@@ -267,6 +287,8 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       before,
       after: deleted
     });
+      return deleted;
+    });
     reply.code(200).send({ deleted: true });
   });
 
@@ -274,7 +296,7 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
   app.get("/admin/events", async () => ({ items: await listAdminEvents(400) }));
   app.delete("/admin/events/:id", async (request, reply) => {
     const { id } = uuidParams.parse(request.params);
-    const preflight = consumeActionPreflight(getPreflightToken(request), {
+    const preflight = await consumeActionPreflight(getPreflightToken(request), {
       action: "event_delete",
       resourceType: "event",
       resourceId: id,
@@ -284,7 +306,8 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       reply.code(403).send({ message: preflight.reason });
       return;
     }
-    const deleted = await deleteEventForAdmin(id);
+    const deleted = await withTransaction(async () => {
+      const deleted = await deleteEventForAdmin(id);
     await writeAdminAudit({
       adminUserId: request.authUser!.id,
       action: "event_delete",
@@ -294,6 +317,8 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       before: null,
       after: deleted
     });
+      return deleted;
+    });
     reply.code(200).send({ deleted: true });
   });
 
@@ -301,7 +326,8 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
   app.get("/admin/settings", async () => ({ items: await listAdminSettings() }));
   app.patch("/admin/settings", async (request) => {
     const input = upsertSettingSchema.parse(request.body);
-    const updated = await upsertAdminSetting(input.key, input.value, request.authUser!.id);
+    const updated = await withTransaction(async () => {
+      const updated = await upsertAdminSetting(input.key, input.value, request.authUser!.id);
     await writeAdminAudit({
       adminUserId: request.authUser!.id,
       action: "admin_setting_upsert",
@@ -310,6 +336,8 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       reason: input.reason,
       before: null,
       after: updated
+    });
+      return updated;
     });
     return { setting: updated };
   });

@@ -7,49 +7,10 @@ import { decryptSecret, encryptSecret } from "../security/crypto.js";
 export async function upsertSecret(automationId: string, input: SecretUpsertInput) {
   const encrypted = encryptSecret(input.value);
 
-  const existing = await db
-    .select({ id: automationSecrets.id })
-    .from(automationSecrets)
-    .where(and(eq(automationSecrets.automationId, automationId), eq(automationSecrets.key, input.key)))
-    .limit(1);
-
-  if (existing.length > 0) {
-    const [updated] = await db
-      .update(automationSecrets)
-      .set({
-        ciphertext: encrypted.ciphertext,
-        iv: encrypted.iv,
-        authTag: encrypted.authTag,
-        updatedAt: new Date()
-      })
-      .where(eq(automationSecrets.id, existing[0].id))
-      .returning({
-        id: automationSecrets.id,
-        key: automationSecrets.key,
-        createdAt: automationSecrets.createdAt,
-        updatedAt: automationSecrets.updatedAt
-      });
-
-    return updated;
-  }
-
-  const [created] = await db
-    .insert(automationSecrets)
-    .values({
-      automationId,
-      key: input.key,
-      ciphertext: encrypted.ciphertext,
-      iv: encrypted.iv,
-      authTag: encrypted.authTag
-    })
-    .returning({
-      id: automationSecrets.id,
-      key: automationSecrets.key,
-      createdAt: automationSecrets.createdAt,
-      updatedAt: automationSecrets.updatedAt
-    });
-
-  return created;
+  const [saved] = await db.insert(automationSecrets).values({ automationId, key: input.key, ...encrypted })
+    .onConflictDoUpdate({ target: [automationSecrets.automationId, automationSecrets.key], set: { ...encrypted, updatedAt: new Date() } })
+    .returning({ id: automationSecrets.id, key: automationSecrets.key, createdAt: automationSecrets.createdAt, updatedAt: automationSecrets.updatedAt });
+  return saved;
 }
 
 export async function listSecretKeys(automationId: string) {
@@ -76,6 +37,7 @@ export async function getDecryptedSecretsMap(automationId: string): Promise<Reco
   const map: Record<string, string> = {};
   for (const row of rows) {
     map[row.key] = decryptSecret({
+      keyId: row.keyId,
       ciphertext: row.ciphertext,
       iv: row.iv,
       authTag: row.authTag
