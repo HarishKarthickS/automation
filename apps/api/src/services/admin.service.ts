@@ -164,12 +164,13 @@ export async function getTemplateByIdForAdmin(id: string) {
   return row ?? null;
 }
 
-export async function updateUserForAdmin(userId: string, patch: Partial<{ role: "user" | "admin"; suspended: boolean; name: string }>) {
+export async function updateUserForAdmin(userId: string, patch: Partial<{ role: "user" | "admin"; suspended: boolean; executionApproved: boolean; name: string }>) {
   const [updated] = await db
     .update(users)
     .set({
       role: patch.role,
       suspended: patch.suspended,
+      executionApproved: patch.executionApproved,
       name: patch.name,
       updatedAt: new Date()
     })

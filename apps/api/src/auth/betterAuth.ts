@@ -17,6 +17,13 @@ export const auth = betterAuth({
   baseURL: `${env.BETTER_AUTH_URL}/api/v1/auth`,
   secret: env.BETTER_AUTH_SECRET,
   trustedOrigins: env.corsOrigins,
+  user: {
+    additionalFields: {
+      role: { type: "string", required: false, defaultValue: "user", input: false },
+      suspended: { type: "boolean", required: false, defaultValue: false, input: false },
+      executionApproved: { type: "boolean", required: false, defaultValue: false, input: false }
+    }
+  },
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,

@@ -151,6 +151,12 @@ export default function AdminPage() {
                     {u.suspended && <Badge variant="destructive">Suspended</Badge>}
                   </div>
                   <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={async () => {
+                      try {
+                        await apiFetch(`/admin/users/${u.id}`, { method: "PATCH", body: { executionApproved: !u.executionApproved, reason: "Execution access review" } });
+                        toast.success("Execution access updated"); await invalidateAll();
+                      } catch (error) { toast.error(error instanceof Error ? error.message : "Update failed"); }
+                    }}>{u.executionApproved ? "Revoke execution" : "Approve execution"}</Button>
                     <Button
                       size="sm"
                       variant="outline"

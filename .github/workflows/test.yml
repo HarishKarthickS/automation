@@ -36,3 +36,39 @@ jobs:
       - run: pnpm -C apps/api test
       - run: pnpm --filter @automation/shared build
       - run: pnpm -C apps/api typecheck
+
+  sandbox:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runtime: nodejs20
+            image: node:22-bookworm-slim
+          - runtime: python312
+            image: python:3.12-slim-bookworm
+          - runtime: cpp23
+            image: gcc:14-bookworm
+          - runtime: java21
+            image: eclipse-temurin:21-jdk-jammy
+          - runtime: go122
+            image: golang:1.22-bookworm
+          - runtime: rust183
+            image: rust:1.83-slim-bookworm
+    env:
+      EXECUTION_MODE: docker
+      RUN_SANDBOX_TESTS: "true"
+      SANDBOX_RUNTIME: ${{ matrix.runtime }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @automation/shared build
+      - run: docker pull "$SANDBOX_IMAGE"
+        env:
+          SANDBOX_IMAGE: ${{ matrix.image }}
+      - run: pnpm -C apps/api exec vitest run test/sandbox.integration.test.ts

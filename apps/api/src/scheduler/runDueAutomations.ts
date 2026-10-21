@@ -1,6 +1,7 @@
+import { assertExecutionApproved } from "../security/executionPolicy.js";
 import { and, eq, lte, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { automations, runs } from "../db/schema.js";
+import { automations, runs, users } from "../db/schema.js";
 import { limits } from "../security/limits.js";
 import { computeNextRun } from "./cronParser.js";
 import { getRetryDelayMs } from "./retryPolicy.js";
@@ -164,6 +165,9 @@ async function executeRun(claimed: ClaimedRun): Promise<void> {
 
   while (true) {
     try {
+      const [owner] = await db.select().from(users).where(eq(users.id, current.automation.userId));
+      if (!owner) throw new Error("Automation owner no longer exists");
+      assertExecutionApproved(owner);
       await assertUserExecutionCapacity(
         current.automation.userId,
         limits.perUserConcurrentRuns,
@@ -341,6 +345,9 @@ export async function runDueAutomations(batchSize = DEFAULT_BATCH_SIZE) {
 }
 
 export async function triggerManualRun(automationId: string, userId: string) {
+  const [owner] = await db.select().from(users).where(eq(users.id, userId));
+  if (!owner) throw new HttpError(404, "User not found");
+  assertExecutionApproved(owner);
   const [automation] = await db
     .select()
     .from(automations)

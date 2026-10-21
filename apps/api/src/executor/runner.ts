@@ -1,3 +1,6 @@
+import { env } from "../config/env.js";
+import { executeIsolated } from "./sandbox.js";
+import { assertSafeJobEnvironment } from "../security/executionPolicy.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
@@ -7,6 +10,7 @@ import { sanitizeEnv } from "./sanitizeEnv.js";
 import { limits } from "../security/limits.js";
 
 export interface RunnerInput {
+  signal?: AbortSignal;
   runId: string;
   runtime: RuntimeId;
   code: string;
@@ -22,7 +26,7 @@ export interface RunnerResult {
   durationMs: number;
 }
 
-interface RuntimeCommand {
+export interface RuntimeCommand {
   fileName: string;
   additionalFiles?: Record<string, string>;
   steps: Array<{
@@ -60,6 +64,7 @@ function getRuntimeCommand(runtime: RuntimeId, tempDir: string, code: string): R
                     "install",
                     "--disable-pip-version-check",
                     "--no-input",
+                    "--target", path.join(tempDir, "python-packages"),
                     ...dependencies
                   ])
                 }
@@ -229,6 +234,8 @@ function buildRustCargoToml(dependencies: string[]): string {
 
 export async function executeAutomation(input: RunnerInput): Promise<RunnerResult> {
   const startedAt = Date.now();
+  if (env.executionMode === "disabled") return { status: "failed", output: "", error: "Isolated execution is not configured", exitCode: null, durationMs: 0 };
+  assertSafeJobEnvironment(input.envVars);
   const tempDir = await createRunTempDir(input.runId);
 
   try {
@@ -263,6 +270,7 @@ export async function executeAutomation(input: RunnerInput): Promise<RunnerResul
         durationMs: Date.now() - startedAt
       };
     }
+    if (env.executionMode === "docker") return await executeIsolated(input, runtimeCommand, tempDir);
     const scriptPath = path.join(tempDir, runtimeCommand.fileName);
     await fs.mkdir(path.dirname(scriptPath), { recursive: true });
     await fs.writeFile(scriptPath, input.code, { encoding: "utf8" });
@@ -275,7 +283,7 @@ export async function executeAutomation(input: RunnerInput): Promise<RunnerResul
     }
 
     const timeoutMs = Math.max(1, input.timeoutSeconds) * 1000;
-    const env = sanitizeEnv(input.envVars);
+    const executionEnv = { ...sanitizeEnv(input.envVars), PYTHONPATH: path.join(tempDir, "python-packages") };
 
     let output = "";
     let error = "";
@@ -325,9 +333,10 @@ export async function executeAutomation(input: RunnerInput): Promise<RunnerResul
         executable: step.executable,
         args: step.args,
         cwd: tempDir,
-        env,
+        env: executionEnv,
         timeoutMs: stepTimeoutMs,
-        appendChunk
+        appendChunk,
+        signal: input.signal
       });
       lastExitCode = stepResult.exitCode;
 
@@ -374,6 +383,7 @@ async function executeStep(input: {
   env: NodeJS.ProcessEnv;
   timeoutMs: number;
   appendChunk: (chunk: Buffer, target: "output" | "error") => void;
+  signal?: AbortSignal;
 }): Promise<{
   status: "succeeded" | "failed" | "timed_out" | "killed";
   error: string | null;
@@ -384,10 +394,16 @@ async function executeStep(input: {
     cwd: input.cwd,
     env: input.env,
     stdio: ["ignore", "pipe", "pipe"],
-    detached: false,
+    detached: process.platform !== "win32",
     windowsHide: true
   });
 
+  const terminate = (signal: NodeJS.Signals) => {
+    try { if (process.platform !== "win32" && child.pid) process.kill(-child.pid, signal); else child.kill(signal); } catch {}
+  };
+  const abort = () => terminate("SIGKILL");
+  input.signal?.addEventListener("abort", abort, { once: true });
+  if (input.signal?.aborted) abort();
   let timedOut = false;
   let forceKilled = false;
   let exited = false;
@@ -400,7 +416,7 @@ async function executeStep(input: {
     } catch (error) {
       if ((error as Error).message === "output_limit_reached") {
         outputLimited = true;
-        child.kill("SIGTERM");
+        terminate("SIGTERM");
       }
     }
   });
@@ -410,7 +426,7 @@ async function executeStep(input: {
     } catch (error) {
       if ((error as Error).message === "output_limit_reached") {
         outputLimited = true;
-        child.kill("SIGTERM");
+        terminate("SIGTERM");
       }
     }
   });
@@ -421,11 +437,11 @@ async function executeStep(input: {
 
   const timer = setTimeout(() => {
     timedOut = true;
-    child.kill("SIGTERM");
+    terminate("SIGTERM");
     setTimeout(() => {
       if (!exited) {
         forceKilled = true;
-        child.kill("SIGKILL");
+        terminate("SIGKILL");
       }
     }, 2_000);
   }, input.timeoutMs);
@@ -433,6 +449,7 @@ async function executeStep(input: {
   return new Promise((resolve) => {
     child.once("close", (code, signal) => {
       exited = true;
+      input.signal?.removeEventListener("abort", abort);
       clearTimeout(timer);
 
       if (timedOut) {
