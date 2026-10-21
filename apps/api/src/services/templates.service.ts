@@ -1,13 +1,12 @@
-import { and, asc, desc, eq, ilike, lt, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, ilike, lt, or, sql } from "drizzle-orm";
 import type { RuntimeId } from "@automation/shared";
 import { db } from "../db/client.js";
 import { automations, templates, users } from "../db/schema.js";
 import { computeNextRunOrThrow } from "../scheduler/scheduleValidation.js";
 import { HttpError } from "../utils/errors.js";
-import { getCachedAsync, setCached, invalidateByPrefix } from "../utils/memoryCache.js";
 import { assertRuntimeEnabled } from "../security/runtimePolicy.js";
 
-const LIST_CACHE_TTL = 60;
+
 
 export async function listTemplates(input: {
   limit: number;
@@ -16,7 +15,6 @@ export async function listTemplates(input: {
   sort: "recent" | "popular";
   tag?: string;
 }) {
-  const cacheKey = `templates:list:${input.limit}:${input.cursor || "first"}:${input.query || ""}:${input.sort}:${input.tag || ""}`;
 
   const filters = [eq(templates.isPublished, true)];
 
@@ -38,37 +36,18 @@ export async function listTemplates(input: {
       .from(templates)
       .where(eq(templates.id, input.cursor));
 
+    if (!cursorRow) throw new HttpError(400, "Pagination cursor no longer exists; restart the list");
     if (cursorRow) {
       if (input.sort === "recent") {
-        filters.push(lt(templates.publishedAt, cursorRow.publishedAt));
+        filters.push(or(lt(templates.publishedAt, cursorRow.publishedAt), and(eq(templates.publishedAt, cursorRow.publishedAt), gt(templates.id, cursorRow.id)))!);
       } else {
         filters.push(
-          sql`(${templates.cloneCount}, ${templates.id}) < (${cursorRow.cloneCount}, ${cursorRow.id})` as any
+          or(lt(templates.cloneCount, cursorRow.cloneCount), and(eq(templates.cloneCount, cursorRow.cloneCount), gt(templates.id, cursorRow.id)))!
         );
       }
     }
   }
 
-  if (!input.cursor && !input.query && !input.tag) {
-    const cached = await getCachedAsync<{ template: typeof templates.$inferSelect; ownerName: string }[]>(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    const rows = await db
-      .select({
-        template: templates,
-        ownerName: users.name
-      })
-      .from(templates)
-      .innerJoin(users, eq(users.id, templates.ownerUserId))
-      .where(and(...filters))
-      .orderBy(input.sort === "recent" ? desc(templates.publishedAt) : desc(templates.cloneCount), asc(templates.id))
-      .limit(input.limit + 1);
-
-    await setCached(cacheKey, rows, LIST_CACHE_TTL);
-    return rows;
-  }
 
   return db
     .select({
