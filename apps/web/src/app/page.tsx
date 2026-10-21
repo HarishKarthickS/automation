@@ -6,13 +6,13 @@ export default function HomePage() {
   return (
     <section className="page-shell space-y-8 py-14 sm:py-20">
       <div className="hero-surface overflow-hidden rounded-3xl border border-border/80 p-8 sm:p-12">
-        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Secure Automation Platform</p>
+        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Personal Automation Workspace</p>
         <h1 className="mt-4 max-w-4xl font-serif text-4xl leading-tight sm:text-6xl">
-          Ship reliable cron automations with enterprise safety and startup speed.
+          Schedule your scripts. See every run.
         </h1>
         <p className="mt-6 max-w-2xl text-sm text-muted-foreground sm:text-base">
-          Automiq combines encrypted secrets, controlled execution, and complete run visibility so teams can automate
-          with confidence from day one.
+          Automiq is a personal project for cron jobs, encrypted secrets, and run history.
+          Scripts run as subprocesses with an env allowlist, timeouts and output limits. Run only code you trust.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild size="lg">
@@ -31,11 +31,11 @@ export default function HomePage() {
         <article className="panel p-6">
           <p className="flex items-center gap-2 text-xs uppercase tracking-[0.12em] text-muted-foreground">
             <ShieldCheck className="h-3.5 w-3.5 text-success" />
-            Secure by default
+            Encrypted storage
           </p>
-          <h2 className="mt-2 font-serif text-2xl">Protected execution</h2>
+          <h2 className="mt-2 font-serif text-2xl">Per-job secrets</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Secrets are encrypted server-side and injected only at runtime.
+            Secrets are encrypted server-side and injected at runtime. Jobs can read and log their own secrets.
           </p>
         </article>
         <article className="panel p-6">

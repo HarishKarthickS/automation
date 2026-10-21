@@ -59,7 +59,7 @@ const FALLBACK_TIMEZONES = [
 const IDLE_PROMPT_MS = 30_000;
 const AUTOSAVE_COUNTDOWN_SECONDS = 10;
 const RUNTIME_OPTIONS: Array<{ value: RuntimeId; label: string; hint: string }> = [
-  { value: "cpp23", label: "C++23", hint: "Compiled with g++ and executed in sandbox" },
+  { value: "cpp23", label: "C++23", hint: "Compiled with g++ and executed as a subprocess" },
   { value: "java21", label: "Java 21", hint: "Compiled with javac and run with java" },
   { value: "python312", label: "Python 3.12", hint: "Executed with python runtime" },
   { value: "go122", label: "Go 1.22", hint: "Built and run with go toolchain" },

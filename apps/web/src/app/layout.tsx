@@ -21,7 +21,7 @@ const body = IBM_Plex_Sans({
 
 export const metadata: Metadata = {
   title: "Automiq",
-  description: "Secure cron automation and code execution platform"
+  description: "Personal cron automation workspace with subprocess execution, encrypted secrets and run history"
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

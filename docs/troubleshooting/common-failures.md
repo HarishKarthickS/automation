@@ -7,7 +7,7 @@
 
 ## Command not found
 
-- Cause: runtime toolchain missing in sandbox image.
+- Cause: runtime toolchain missing on the execution host.
 - Fix: install required compiler/interpreter in runtime environment.
 
 ## Timeout exceeded
