@@ -62,8 +62,8 @@ export default function LoginPage() {
     <section className="page-shell grid min-h-[calc(100vh-88px)] items-center gap-6 py-12 lg:grid-cols-2">
       <Card className="hero-surface hidden lg:block">
         <CardHeader>
-          <CardDescription className="text-xs uppercase tracking-[0.18em]">Secure Cloud Runtime</CardDescription>
-          <CardTitle className="font-serif text-4xl">Reliable automations without infrastructure overhead.</CardTitle>
+          <CardDescription className="text-xs uppercase tracking-[0.18em]">Personal Automation Workspace</CardDescription>
+          <CardTitle className="font-serif text-4xl">Your scripts, schedules, and run history in one place.</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-success" /> Encrypted secrets by default</div>

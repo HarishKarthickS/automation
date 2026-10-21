@@ -2,6 +2,27 @@
 
 Personal automation workspace: cron-style jobs plus a multi-runtime code runner. Not a production SaaS product.
 
+## Demo
+
+- [Live frontend](https://automiqs.vercel.app/) (the older repository homepage redirects here).
+- [Live API base via the frontend proxy](https://automiqs.vercel.app/api/v1).
+- [API session check](https://automiqs.vercel.app/api/v1/session).
+- Login: the deployed sign-in page does not publish shared demo credentials. Use
+  [Create account](https://automiqs.vercel.app/signup) with a separate demo-only account,
+  or run locally and sign up with your own test credentials. No shared login is provisioned by this repo.
+- The Render API may sleep when idle. The first request can be slow while it wakes;
+  wait about a minute and retry if the initial sign-in or data request times out.
+- Suggested walkthrough: create an automation, select a runtime, set a cron schedule,
+  trigger a manual run, and inspect the output in run history. Run only trusted code.
+
+Screenshots below show the deployed app's public pages, captured on 21 October 2026.
+They are not authenticated dashboard screenshots. The older marketing copy visible
+in these captures is replaced by this PR; deployment updates after merge.
+
+| Sign in | Create account | Public templates |
+| --- | --- | --- |
+| ![Sign-in form](docs/images/login.png) | ![Account creation form](docs/images/signup.png) | ![Public templates](docs/images/templates.png) |
+
 ## Stack
 
 - Frontend: Next.js App Router + TypeScript + Tailwind (`apps/web`)
@@ -20,7 +41,7 @@ Personal automation workspace: cron-style jobs plus a multi-runtime code runner.
 - Email/password signup and login via Better Auth sessions
 - Automation CRUD with cron schedule and timezone
 - Encrypted per-automation secrets (AES-256-GCM)
-- Safe subprocess execution with timeout + output limits + cleanup
+- Subprocess execution with env allowlist, timeouts and output limits + cleanup
 - Multi-runtime execution support for C++, Java, Python, Go, Rust (Node.js legacy compatibility)
 - Run history/logs and manual trigger
 - Internal scheduler endpoint (`/api/v1/internal/run-due-automations`)
@@ -49,48 +70,10 @@ Personal automation workspace: cron-style jobs plus a multi-runtime code runner.
 
 ## API Overview
 
-- Auth passthrough: Better Auth mounted at `/api/v1/auth/*`
-- Session helper: `GET /api/v1/session`
-- CSRF token: `GET /api/v1/csrf-token`
-- Automations:
-  - `POST /api/v1/automations`
-  - `GET /api/v1/automations`
-  - `GET /api/v1/automations/:id`
-  - `PUT /api/v1/automations/:id`
-  - `DELETE /api/v1/automations/:id`
-  - `POST /api/v1/automations/:id/trigger`
-  - `POST /api/v1/automations/:id/publish`
-  - `POST /api/v1/automations/:id/unpublish`
-- Secrets:
-  - `POST /api/v1/automations/:id/secrets`
-  - `GET /api/v1/automations/:id/secrets`
-  - `DELETE /api/v1/automations/:id/secrets/:key`
-- Runs:
-  - `GET /api/v1/automations/:id/runs`
-  - `GET /api/v1/runs/:id`
-- Templates:
-  - `GET /api/v1/templates`
-  - `GET /api/v1/templates/:id`
-  - `POST /api/v1/templates/:id/clone`
-- Runtimes:
-  - `GET /api/v1/runtimes`
-- Admin:
-  - `GET /api/v1/admin/overview`
-  - `GET /api/v1/admin/users`
-  - `PATCH /api/v1/admin/users/:id`
-  - `GET /api/v1/admin/automations`
-  - `PATCH /api/v1/admin/automations/:id`
-  - `GET /api/v1/admin/runs`
-  - `GET /api/v1/admin/templates`
-  - `GET /api/v1/admin/audit-logs`
-  - `POST /api/v1/admin/actions/preflight`
-- Scheduler (internal):
-  - `POST /api/v1/internal/run-due-automations`
-  - `GET /api/v1/internal/observability/metrics`
-  - `GET /api/v1/internal/observability/alerts`
-  - Returns `202 Accepted` with initiation payload; execution runs in background.
-- Dashboard:
-  - `GET /api/v1/dashboard/overview`
+See the [complete endpoint reference](docs/api/endpoints.md), including public,
+session, admin and internal-token routes, plus the Better Auth passthrough.
+The browser uses the same-origin `/api/v1` proxy so session and CSRF cookies stay
+on the frontend origin. Internal scheduler/health endpoints must use the API host directly.
 
 ## API Integration Examples
 
@@ -118,15 +101,25 @@ const automation = await fetch(`${API_BASE}/api/v1/automations`, {
 }).then((r) => r.json());
 ```
 
-## Security Notes
+## Security model
 
 - Session cookies are `httpOnly`, secure in production, and cross-site compatible.
 - CSRF protection uses double-submit token for non-auth mutating routes.
 - Secrets are encrypted server-side with AES-256-GCM and never returned in plaintext.
-- Executor isolates runs in temporary directories, limits output bytes, enforces timeout, and cleans up files.
+- Jobs use **subprocess execution with env allowlist, timeouts and output limits**.
+  Each run gets a temporary working directory with cleanup; this is not a security sandbox.
+- Jobs run with the API host user's filesystem permissions and outbound network access.
+  There are no per-job CPU, memory, disk or network quotas, containers or namespaces.
+  Timeout/output termination targets the direct child; descendant processes may survive.
+- The env allowlist prevents automatic inheritance of server credentials. It does not
+  prevent host file access. Jobs can read, print or transmit their injected secrets;
+  retained run output has no automatic secret redaction.
+- Run only code and dependencies you trust. This personal workspace is not designed
+  to isolate hostile tenants. See the [execution model](docs/security/sandbox.md).
 - Internal scheduler endpoint requires bearer token.
 - Due scheduler triggers are enqueued into Redis list queue (`REDIS_DUE_QUEUE`, default `queue:run_due_automations`).
-- If enqueue fails, API falls back to in-process async execution.
+- If enqueue fails, API falls back to in-process async execution. This fallback is
+  not durable across process restarts; Redis list consumption is not an exactly-once queue.
 
 ## Common Startup Error
 
@@ -214,11 +207,23 @@ Run API tests:
 
 - `pnpm -C apps/api test`
 
+The [Tests workflow](.github/workflows/test.yml) runs API tests and API typechecking
+on pull requests and pushes to main. Tests cover session/CSRF guards, secret-route
+ownership and metadata responses, Redis enqueue/fallback behavior, encryption,
+cron parsing, and real subprocess execution controls. Route suites mock the auth
+provider, persistence and Redis rate limiter; they do not verify live signup/login,
+PostgreSQL queries or Redis server behavior.
+
 Run full workspace tests:
 
 - `pnpm test`
 
 ## Runtime Docs (MkDocs)
 
-Runtime and sandbox documentation is provided via MkDocs in `docs/` with config at `mkdocs.yml`.
+Runtime and execution-control documentation is provided via MkDocs in `docs/` with config at `mkdocs.yml`.
 
+## Reviewable development
+
+New work is split into focused PRs for auth, scheduler, executor, secrets/CI and
+product/demo documentation. See [the review order and change history](docs/development.md).
+Existing commits are preserved; the original uploads have not been rewritten.

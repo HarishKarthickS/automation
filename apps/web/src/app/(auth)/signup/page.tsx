@@ -45,10 +45,10 @@ export default function SignupPage() {
       <Card className="hero-surface hidden lg:block">
         <CardHeader>
           <CardDescription className="text-xs uppercase tracking-[0.18em]">Launch Faster</CardDescription>
-          <CardTitle className="font-serif text-4xl">Set up your secure automation workspace in minutes.</CardTitle>
+          <CardTitle className="font-serif text-4xl">Set up your personal automation workspace in minutes.</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-success" /> Multi-tenant isolation and encrypted storage</div>
+          <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-success" /> Encrypted secret storage; run only code you trust</div>
           <div className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> Templates, runs, logs, and secret management included</div>
         </CardContent>
       </Card>
@@ -57,7 +57,7 @@ export default function SignupPage() {
         <CardHeader className="space-y-1">
           <CardTitle className="font-serif text-3xl">Create account</CardTitle>
           <CardDescription>
-            Launch secure automations and monitor every execution in one workspace.
+            Schedule trusted scripts and monitor each execution in your personal workspace.
           </CardDescription>
         </CardHeader>
         <CardContent>

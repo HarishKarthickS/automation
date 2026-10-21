@@ -32,7 +32,7 @@ export default function TemplatesPage() {
           </CardDescription>
           <CardTitle className="mt-1 font-serif text-4xl">Automation Templates</CardTitle>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Discover production-ready automations and clone them into your workspace in seconds.
+            Explore shared scripts and clone them into your personal workspace. Review code before running it.
           </p>
         </CardHeader>
       </Card>

@@ -13,9 +13,10 @@ nav:
     - Go 1.22: runtimes/go.md
     - Rust 1.83: runtimes/rust.md
   - Security:
-    - Sandbox Model: security/sandbox.md
+    - Subprocess Execution Model: security/sandbox.md
     - Dependency Policy: security/dependency-policy.md
   - API:
+    - Endpoint Reference: api/endpoints.md
     - Runtime API: api/runtimes.md
   - Operations:
     - Runtime Rollout: operations/runtime-rollout.md
