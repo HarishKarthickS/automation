@@ -10,6 +10,7 @@ export class ApiError extends Error {
 }
 
 const API_PREFIX = "/api/v1";
+export const API_MUTATION_EVENT = "automiq:mutation";
 
 let csrfToken: string | null = null;
 let csrfRequest: Promise<string> | null = null;
@@ -69,6 +70,9 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}, c
     throw new ApiError(response.status, (details as any)?.message ?? "Request failed", details);
   }
 
+  if (typeof window !== "undefined" && !["GET", "HEAD", "OPTIONS"].includes(method)) {
+    window.dispatchEvent(new Event(API_MUTATION_EVENT));
+  }
   if (response.status === 204) {
     return undefined as T;
   }
