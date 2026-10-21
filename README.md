@@ -15,8 +15,9 @@ Personal automation workspace: cron-style jobs plus a multi-runtime code runner.
 - Suggested walkthrough: create an automation, select a runtime, set a cron schedule,
   trigger a manual run, and inspect the output in run history. Run only trusted code.
 
-Screenshots below are from the local reviewer build's public pages, not an authenticated
-production account. They show the copy in this PR; deployment updates after merge.
+Screenshots below show the deployed app's public pages, captured on 21 October 2026.
+They are not authenticated dashboard screenshots. The older marketing copy visible
+in these captures is replaced by this PR; deployment updates after merge.
 
 | Sign in | Create account | Public templates |
 | --- | --- | --- |
