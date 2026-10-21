@@ -14,12 +14,16 @@ nav:
     - Go 1.22: runtimes/go.md
     - Rust 1.83: runtimes/rust.md
   - Security:
-    - Subprocess Execution Model: security/sandbox.md
+    - Execution Security Model: security/sandbox.md
     - Dependency Policy: security/dependency-policy.md
   - API:
     - Endpoint Reference: api/endpoints.md
     - Runtime API: api/runtimes.md
   - Operations:
     - Runtime Rollout: operations/runtime-rollout.md
+    - Isolated Execution: operations/isolated-execution.md
+    - Durable Scheduling: operations/durable-scheduler.md
+    - Encryption Key Rotation: operations/key-rotation.md
+    - Deployment Verification: operations/deployment-verification.md
   - Troubleshooting:
     - Common Failures: troubleshooting/common-failures.md

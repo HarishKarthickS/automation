@@ -1,37 +1,11 @@
-# Subprocess execution model
+# Execution security model
 
-Jobs use subprocess execution with env allowlist, timeouts and output limits.
-Each run receives a temporary working directory. This is workspace separation,
-not a security sandbox or operating-system isolation boundary.
+Production execution is disabled by default. Creating an account does not grant execution permission. Administrators approve accounts; suspension and approval are checked when claiming, admitting, starting and renewing jobs.
 
-## Implemented controls
+When `EXECUTION_MODE=docker` is configured, each job runs in a fresh non-root container. It receives no host mounts, daemon socket or API credentials. Containers use a read-only root filesystem, no capabilities, no privilege escalation, no network, one CPU, 512 MiB memory, 64 processes and bounded per-job tmpfs. Runtime images must be preinstalled and pass actual toolchain probes. Code is streamed as encoded file data, not interpolated as shell commands. Package downloads are disabled. Timeout, cancellation and output overflow terminate the whole container; an internal deadline also limits jobs after an API crash.
 
-- Per-run temporary working directory and cleanup after completion/failure.
-- Environment variable sanitization before process spawn.
-- Timeout enforcement with graceful kill followed by force kill.
-- Output truncation to configured maximum bytes.
+Development `trusted-subprocess` mode shares the host OS user. It provides an environment allowlist, temporary directory, timeout/output bounds and best-effort process-group termination. It does not provide filesystem, network or memory isolation and is rejected in production. Python development installs use a job-local target directory.
 
-## Runtime process model
+Secrets are encrypted at rest with versioned AES-256-GCM keys. Jobs can access and print their own injected secrets; retained output is not automatically redacted. A container is not a guarantee against unpatched kernel/engine vulnerabilities. Keep the host patched and dedicated; do not treat a successful CI sandbox test as proof that a production daemon is configured.
 
-- Runtime adapters generate source files and invoke language tools.
-- Compile/runtime errors are captured and stored in run logs.
-- Workspace is deleted after completion.
-
-## Limits of protection
-
-- Jobs run under the API host's OS user. They can access files readable/writable
-  by that user outside their working directory and make outbound network requests.
-- There are no per-job CPU, memory, disk, network, container or namespace limits.
-- Timeout/output enforcement targets the direct child process; descendant process
-  trees are not reliably terminated. Dependency installation runs on the host too.
-- The env allowlist prevents automatic inheritance of application credentials;
-  it does not stop code reading host files or accessing injected job secrets.
-- Encrypted storage does not stop a job printing or transmitting its own secrets.
-  Output is retained in run logs without automatic secret redaction.
-
-Run only code and dependencies you trust. A hostile multi-user service requires
-an isolated worker/container boundary, restricted filesystem and network access,
-resource quotas and process-tree cleanup before accepting untrusted jobs.
-
-Resume wording: "Built subprocess execution with env allowlist, timeouts and
-output limits, plus encrypted per-automation secrets and run history."
+See [setup and limits](../operations/isolated-execution.md), [durable recovery semantics](../operations/durable-scheduler.md), and [key rotation](../operations/key-rotation.md).

@@ -1,30 +1,5 @@
 # Runtime API
 
-## `GET /api/v1/runtimes`
+Authenticated `GET /api/v1/runtimes` returns `{ items, mode, message }`. Each available item includes its persistent `id`, display `label`, actual probed `version`, and Docker `image` when applicable. Missing executables/images and disabled runtimes are omitted. A disabled deployment returns an empty list with an explanatory message.
 
-Returns runtimes available to authenticated users.
-
-### Response
-
-```json
-{
-  "items": [
-    { "id": "cpp23", "label": "C++23" },
-    { "id": "java21", "label": "Java 21" },
-    { "id": "python312", "label": "Python 3.12" },
-    { "id": "go122", "label": "Go 1.22" },
-    { "id": "rust183", "label": "Rust 1.83" },
-    { "id": "nodejs20", "label": "Node.js" }
-  ]
-}
-```
-
-## Runtime field in automations/templates
-
-- `runtime` is required on create.
-- `runtime` is optional on update.
-- Supported values are validated by shared schema enum.
-
-Node.js is available for both new and existing automations. Its persistent ID
-remains `nodejs20` for compatibility with saved jobs; execution uses the host's
-Node.js executable. See [Node.js runtime](../runtimes/nodejs.md).
+Runtime IDs remain `nodejs20`, `python312`, `cpp23`, `java21`, `go122` and `rust183` for saved-job compatibility. An ID's historical suffix is not a substitute for the actual version returned by the host/image probe. The editor consumes this endpoint and keeps the configured runtime of existing jobs readable during outages. Draft creation is permitted while execution is unavailable; trigger/admission requires actual capability and account approval.

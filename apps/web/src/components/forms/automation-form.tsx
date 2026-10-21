@@ -567,9 +567,9 @@ export function AutomationForm({ mode, automation }: AutomationFormProps) {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Timezone</Label>
+                <Label htmlFor="timezone">Timezone</Label>
                 <Select value={timezone} onValueChange={setTimezone}>
-                  <SelectTrigger>
+                  <SelectTrigger id="timezone">
                     <SelectValue placeholder="Select timezone" />
                   </SelectTrigger>
                   <SelectContent>
@@ -660,9 +660,9 @@ export function AutomationForm({ mode, automation }: AutomationFormProps) {
           </CardHeader>
           <CardContent>
             <div className="mb-4 space-y-2">
-              <Label>Runtime</Label>
+              <Label htmlFor="runtime">Runtime</Label>
               <Select value={runtime} onValueChange={(value) => onRuntimeChange(value as RuntimeId)}>
-                <SelectTrigger>
+                <SelectTrigger id="runtime">
                   <SelectValue placeholder="Select runtime" />
                 </SelectTrigger>
                 <SelectContent>

@@ -242,9 +242,9 @@ export default function HomePage() {
             A workspace for code you trust.
           </h2>
           <p className="mt-2 text-xs leading-6 text-muted-foreground">
-            Jobs use subprocess execution with an environment allowlist,
-            timeouts, and output limits. Secrets are encrypted at rest.
-            Execution has no container, filesystem, or network isolation.
+            Production execution requires approval and a configured isolated worker.
+            Container jobs have resource limits and no network access.
+            Execution is off by default; secrets are encrypted at rest.
           </p>
         </div>
         <a

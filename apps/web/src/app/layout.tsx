@@ -12,7 +12,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 export const metadata: Metadata = {
   title: "Automiq",
   description:
-    "Personal cron automation workspace with subprocess execution, encrypted secrets and run history",
+    "Personal cron automation workspace with approved execution, encrypted secrets and run history",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

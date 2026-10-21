@@ -1,0 +1,16 @@
+# Optional separate Blueprint. Provisioning a Render cron service may incur hosting charges.
+# The PostgreSQL polling worker already advances schedules without an external cron.
+services:
+  - type: cron
+    name: automiq-scheduler-wakeup
+    runtime: node
+    schedule: "* * * * *"
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @automation/api build
+    startCommand: pnpm --filter @automation/api exec node dist/scripts/cronWakeup.js
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: API_ORIGIN
+        sync: false
+      - key: INTERNAL_CRON_TOKEN
+        sync: false

@@ -37,7 +37,7 @@ export function AuthIntro() {
         <p className="mt-5 font-mono text-[10px] leading-5 text-muted-foreground">
           Personal workspace. Trusted code only.
           <br />
-          Subprocess controls, without container isolation.
+          Execution requires approval and an isolated worker.
         </p>
       </div>
     </aside>
