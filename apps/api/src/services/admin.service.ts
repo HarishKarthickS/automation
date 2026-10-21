@@ -13,58 +13,21 @@ import {
 } from "../db/schema.js";
 import { getObservabilityAlerts } from "./observability.service.js";
 
-type PreflightPayload = {
-  action: string;
-  resourceType: string;
-  resourceId: string;
-  reason: string;
-  adminUserId: string;
-  expiresAtMs: number;
-};
-
-const preflightTokens = new Map<string, PreflightPayload>();
 const PREVIEW_TTL_MS = 5 * 60 * 1000;
-
-export function createActionPreflight(input: {
-  action: string;
-  resourceType: string;
-  resourceId: string;
-  reason: string;
-  adminUserId: string;
-}) {
+export async function createActionPreflight(input: { action: string; resourceType: string; resourceId: string; reason: string; adminUserId: string }) {
   const token = crypto.randomUUID();
-  preflightTokens.set(token, {
-    ...input,
-    expiresAtMs: Date.now() + PREVIEW_TTL_MS
-  });
-  return { token, expiresInSeconds: Math.floor(PREVIEW_TTL_MS / 1000) };
+  await db.execute(sql`DELETE FROM admin_action_tokens WHERE expires_at < now()`);
+  await db.execute(sql`INSERT INTO admin_action_tokens(token_hash, actor_id, action, resource_type, resource_id, reason, expires_at)
+    VALUES (${crypto.createHash("sha256").update(token).digest("hex")}, ${input.adminUserId}, ${input.action}, ${input.resourceType}, ${input.resourceId}, ${input.reason}, ${new Date(Date.now() + PREVIEW_TTL_MS)})`);
+  return { token, expiresInSeconds: PREVIEW_TTL_MS / 1000 };
 }
-
-export function consumeActionPreflight(
-  token: string | undefined,
-  expected: { action: string; resourceType: string; resourceId: string; adminUserId: string }
-) {
-  if (!token) {
-    return { ok: false, reason: "Missing admin action token" };
-  }
-  const payload = preflightTokens.get(token);
-  if (!payload) {
-    return { ok: false, reason: "Invalid or expired admin action token" };
-  }
-  preflightTokens.delete(token);
-
-  if (payload.expiresAtMs < Date.now()) {
-    return { ok: false, reason: "Expired admin action token" };
-  }
-  if (
-    payload.action !== expected.action ||
-    payload.resourceType !== expected.resourceType ||
-    payload.resourceId !== expected.resourceId ||
-    payload.adminUserId !== expected.adminUserId
-  ) {
-    return { ok: false, reason: "Admin action token does not match request" };
-  }
-  return { ok: true as const, reason: payload.reason };
+export async function consumeActionPreflight(token: string | undefined, expected: { action: string; resourceType: string; resourceId: string; adminUserId: string }) {
+  if (!token) return { ok: false as const, reason: "Missing admin action token" };
+  const result = await db.execute(sql`DELETE FROM admin_action_tokens WHERE token_hash = ${crypto.createHash("sha256").update(token).digest("hex")}
+    AND actor_id = ${expected.adminUserId} AND action = ${expected.action} AND resource_type = ${expected.resourceType}
+    AND resource_id = ${expected.resourceId} AND expires_at > now() RETURNING reason`);
+  const row = (result as any).rows[0];
+  return row ? { ok: true as const, reason: String(row.reason) } : { ok: false as const, reason: "Invalid, expired or mismatched admin action token" };
 }
 
 export async function writeAdminAudit(input: {
@@ -172,29 +135,9 @@ export async function listAdminAuditLogs(limit = 200) {
 }
 
 export async function upsertAdminSetting(key: string, value: string, updatedByUserId: string) {
-  const [existing] = await db.select().from(adminSettings).where(eq(adminSettings.key, key));
-  if (existing) {
-    const [updated] = await db
-      .update(adminSettings)
-      .set({
-        value,
-        updatedByUserId,
-        updatedAt: new Date()
-      })
-      .where(eq(adminSettings.key, key))
-      .returning();
-    return updated;
-  }
-  const [created] = await db
-    .insert(adminSettings)
-    .values({
-      key,
-      value,
-      updatedByUserId,
-      updatedAt: new Date()
-    })
-    .returning();
-  return created;
+  const [saved] = await db.insert(adminSettings).values({ key, value, updatedByUserId })
+    .onConflictDoUpdate({ target: adminSettings.key, set: { value, updatedByUserId, updatedAt: new Date() } }).returning();
+  return saved;
 }
 
 export async function listAdminSettings() {

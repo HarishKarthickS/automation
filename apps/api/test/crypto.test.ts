@@ -1,7 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { decryptSecret, encryptSecret } from "../src/security/crypto.js";
+import { env } from "../src/config/env.js";
 
 describe("crypto", () => {
+  it("reads legacy ciphertext while new writes use the active versioned key", () => {
+    const legacy = encryptSecret("legacy value");
+    const previous = { id: env.ENCRYPTION_KEY_ID, ring: env.ENCRYPTION_KEYRING };
+    try {
+      env.ENCRYPTION_KEYRING = JSON.stringify({ v2: Buffer.alloc(32, 8).toString("base64") });
+      env.ENCRYPTION_KEY_ID = "v2";
+      expect(decryptSecret({ ...legacy, keyId: undefined })).toBe("legacy value");
+      const current = encryptSecret("new value");
+      expect(current.keyId).toBe("v2");
+      expect(decryptSecret(current)).toBe("new value");
+      expect(() => decryptSecret({ ...current, keyId: "missing" })).toThrow("Unknown encryption key");
+    } finally { env.ENCRYPTION_KEY_ID = previous.id; env.ENCRYPTION_KEYRING = previous.ring; }
+  });
   it("encrypts and decrypts a secret", () => {
     const secret = "super-secret-value";
     const encrypted = encryptSecret(secret);

@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gt, ilike, lt, or, sql } from "drizzle-orm";
 import type { RuntimeId } from "@automation/shared";
-import { db } from "../db/client.js";
+import { db, withTransaction } from "../db/client.js";
 import { automations, templates, users } from "../db/schema.js";
 import { computeNextRunOrThrow } from "../scheduler/scheduleValidation.js";
 import { HttpError } from "../utils/errors.js";
@@ -78,7 +78,7 @@ export async function getTemplateById(templateId: string) {
   return row;
 }
 
-export async function cloneTemplateForUser(
+async function cloneTemplateForUserImpl(
   templateId: string,
   userId: string,
   nameOverride?: string,
@@ -121,3 +121,5 @@ export async function cloneTemplateForUser(
   return createdAutomation;
 }
 
+
+export const cloneTemplateForUser = (...args: Parameters<typeof cloneTemplateForUserImpl>) => withTransaction(() => cloneTemplateForUserImpl(...args));

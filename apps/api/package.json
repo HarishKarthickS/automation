@@ -15,7 +15,8 @@
     "pretest": "corepack pnpm --filter @automation/shared build",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx src/db/migrate.ts"
+    "db:migrate": "tsx src/db/migrate.ts",
+    "secrets:rotate": "tsx src/scripts/rotateSecrets.ts"
   },
   "dependencies": {
     "@automation/shared": "workspace:*",

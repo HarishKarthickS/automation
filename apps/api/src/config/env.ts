@@ -23,6 +23,8 @@ const envSchema = z.object({
   MASTER_ENCRYPTION_KEY: z
     .string()
     .refine(isValidMasterKey, "Must be base64 and decode to exactly 32 bytes"),
+  ENCRYPTION_KEY_ID: z.string().regex(/^[a-zA-Z0-9_-]{1,40}$/).default("legacy"),
+  ENCRYPTION_KEYRING: z.string().default("{}").refine((value) => { try { const keys = JSON.parse(value); return keys && typeof keys === "object" && !Array.isArray(keys) && Object.values(keys).every((key) => typeof key === "string" && isValidMasterKey(key)); } catch { return false; } }, "Expected key IDs mapped to base64 32-byte keys"),
   INTERNAL_CRON_TOKEN: z.string().min(24),
   MAX_CODE_SIZE_BYTES: z.coerce.number().int().positive().default(100 * 1024),
   MAX_OUTPUT_BYTES: z.coerce.number().int().positive().default(256 * 1024),

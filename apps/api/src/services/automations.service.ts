@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gt, lt, or } from "drizzle-orm";
 import type { CreateAutomationInput, UpdateAutomationInput } from "@automation/shared";
-import { db } from "../db/client.js";
+import { db, withTransaction } from "../db/client.js";
 import { automations, templates } from "../db/schema.js";
 import { computeNextRunOrThrow } from "../scheduler/scheduleValidation.js";
 import { HttpError } from "../utils/errors.js";
@@ -104,7 +104,7 @@ export async function deleteAutomation(userId: string, id: string) {
   await invalidateByPrefix(`automations:list:${userId}:`);
 }
 
-export async function publishAutomationTemplate(userId: string, automationId: string) {
+async function publishAutomationTemplateImpl(userId: string, automationId: string) {
   const automation = await getAutomationById(userId, automationId);
 
   const templatePayload = {
@@ -123,13 +123,7 @@ export async function publishAutomationTemplate(userId: string, automationId: st
     publishedAt: new Date()
   };
 
-  const existing = await db.select().from(templates).where(eq(templates.automationId, automation.id)).limit(1);
-
-  if (existing.length > 0) {
-    await db.update(templates).set(templatePayload).where(eq(templates.automationId, automation.id));
-  } else {
-    await db.insert(templates).values(templatePayload);
-  }
+  await db.insert(templates).values(templatePayload).onConflictDoUpdate({ target: templates.automationId, set: templatePayload });
 
   const [updatedAutomation] = await db
     .update(automations)
@@ -146,7 +140,7 @@ export async function publishAutomationTemplate(userId: string, automationId: st
   };
 }
 
-export async function unpublishAutomationTemplate(userId: string, automationId: string) {
+async function unpublishAutomationTemplateImpl(userId: string, automationId: string) {
   await getAutomationById(userId, automationId);
 
   await db
@@ -170,3 +164,7 @@ export async function unpublishAutomationTemplate(userId: string, automationId: 
   return updatedAutomation;
 }
 
+
+export const publishAutomationTemplate = (...args: Parameters<typeof publishAutomationTemplateImpl>) => withTransaction(() => publishAutomationTemplateImpl(...args));
+
+export const unpublishAutomationTemplate = (...args: Parameters<typeof unpublishAutomationTemplateImpl>) => withTransaction(() => unpublishAutomationTemplateImpl(...args));

@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { env } from "../config/env.js";
@@ -30,7 +31,20 @@ export const pool = new Pool({
   query_timeout: 10_000
 });
 
-export const db = drizzle(pool, { schema });
+const database = drizzle(pool, { schema });
+const transactionScope = new AsyncLocalStorage<typeof database>();
+// Service calls in withTransaction share the same connection, including audit writes.
+export const db: typeof database = new Proxy(database, {
+  get(target, property) {
+    const active = transactionScope.getStore() ?? target;
+    const value = Reflect.get(active, property);
+    return typeof value === "function" ? value.bind(active) : value;
+  }
+});
+export async function withTransaction<T>(work: () => Promise<T>): Promise<T> {
+  if (transactionScope.getStore()) return work();
+  return database.transaction((tx) => transactionScope.run(tx as unknown as typeof database, work));
+}
 
 export type Database = typeof db;
 

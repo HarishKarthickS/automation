@@ -135,6 +135,7 @@ export const automationSecrets = pgTable(
       .notNull()
       .references(() => automations.id, { onDelete: "cascade" }),
     key: text("key").notNull(),
+    keyId: text("key_id").notNull().default("legacy"),
     ciphertext: text("ciphertext").notNull(),
     iv: text("iv").notNull(),
     authTag: text("auth_tag").notNull(),
@@ -268,3 +269,15 @@ export const adminSettings = pgTable(
   }
 );
 
+
+export const adminActionTokens = pgTable("admin_action_tokens", {
+  tokenHash: text("token_hash").primaryKey(), actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  action: text("action").notNull(), resourceType: text("resource_type").notNull(), resourceId: text("resource_id").notNull(),
+  reason: text("reason").notNull(), expiresAt: timestamp("expires_at", { withTimezone: true }).notNull()
+}, (table) => ({ expiryIdx: index("admin_action_tokens_expiry_idx").on(table.expiresAt) }));
+
+export const mutationRequests = pgTable("mutation_requests", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }), scope: text("scope").notNull(),
+  requestKey: text("request_key").notNull(), requestHash: text("request_hash").notNull(), responseJson: text("response_json").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => ({ requestUnique: uniqueIndex("mutation_requests_unique_idx").on(table.userId, table.scope, table.requestKey), createdIdx: index("mutation_requests_created_idx").on(table.createdAt) }));

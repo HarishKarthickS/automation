@@ -1,3 +1,4 @@
+import { idempotent } from "../utils/idempotency.js";
 import type { FastifyPluginAsync } from "fastify";
 import { templateCloneSchema, templateListQuerySchema } from "@automation/shared";
 import { z } from "zod";
@@ -58,16 +59,15 @@ export const templateRoutes: FastifyPluginAsync = async (app) => {
     const { id } = templateParams.parse(request.params);
     const input = templateCloneSchema.parse(request.body ?? {});
 
-    const cloned = await cloneTemplateForUser(
-      id,
-      request.authUser!.id,
-      input.nameOverride,
-      input.timezoneOverride
-    );
+    const cloned = await idempotent(request.authUser!.id, `template:clone:${id}`, request.headers["idempotency-key"], input, async () => {
+      const row = await cloneTemplateForUser(id, request.authUser!.id, input.nameOverride, input.timezoneOverride);
+      return { id: row.id };
+    });
     await setOnboardingStepCompleted(request.authUser!.id, "create_automation");
     await setOnboardingStepCompleted(request.authUser!.id, "configure_schedule");
     await trackProductEvent(request.authUser!.id, "template_cloned", { templateId: id, automationId: cloned.id });
     await invalidateByPrefix("templates:");
+    await invalidateByPrefix(`automations:list:${request.authUser!.id}:`);
 
     reply.code(201).send({ automationId: cloned.id });
   });
