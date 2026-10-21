@@ -54,7 +54,7 @@ export async function getObservabilitySnapshot(): Promise<ObservabilitySnapshot>
       where enabled = true
         and next_run_at <= now()
     `),
-    redis.llen(env.REDIS_DUE_QUEUE).catch(() => 0)
+    db.execute(sql`SELECT count(*)::int AS count FROM runs WHERE status='queued'`)
   ]);
 
   const automationRow = (automationAgg as any).rows?.[0] as { total: number; enabled: number } | undefined;
@@ -73,7 +73,7 @@ export async function getObservabilitySnapshot(): Promise<ObservabilitySnapshot>
     generatedAt: new Date().toISOString(),
     automationsEnabled: automationRow?.enabled ?? 0,
     automationsTotal: automationRow?.total ?? 0,
-    queueDepth: Number(queueDepth) || 0,
+    queueDepth: Number((queueDepth as any).rows?.[0]?.count) || 0,
     schedulerLagMinutes: Math.max(0, Math.round((lagRow?.lag_minutes ?? 0) * 100) / 100),
     runs24hTotal,
     runs24hSucceeded,

@@ -95,7 +95,7 @@ export const automationRoutes: FastifyPluginAsync = async (app) => {
 
   app.post("/automations/:id/trigger", async (request, reply) => {
     const { id } = idParamSchema.parse(request.params);
-    const run = await triggerManualRun(id, request.authUser!.id);
+    const run = await idempotent(request.authUser!.id, `automation:trigger:${id}`, request.headers["idempotency-key"], {}, () => triggerManualRun(id, request.authUser!.id));
     await setOnboardingStepCompleted(request.authUser!.id, "trigger_manual_run");
     await trackProductEvent(request.authUser!.id, "manual_run_triggered", { automationId: id, runId: run.id });
     reply.code(202).send({ runId: run.id });
