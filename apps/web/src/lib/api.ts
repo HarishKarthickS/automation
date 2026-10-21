@@ -55,7 +55,7 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}, c
   });
 
   if (!response.ok) {
-    let details: unknown = null;
+    let details: unknown;
     try {
       details = await response.json();
     } catch {

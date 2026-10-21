@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 const PROTECTED_PREFIXES = ["/dashboard", "/automations", "/admin"];
 const SESSION_COOKIE_NAMES = ["caas.session_token", "__Secure-caas.session_token"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 

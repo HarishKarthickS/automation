@@ -8,6 +8,8 @@ import { limits } from "../src/security/limits.js";
 import { upsertSecret, getDecryptedSecretsMap } from "../src/services/secrets.service.js";
 import { createActionPreflight, consumeActionPreflight } from "../src/services/admin.service.js";
 import { idempotent } from "../src/utils/idempotency.js";
+import { auth } from "../src/auth/betterAuth.js";
+import { createApp } from "../src/app.js";
 
 describe.skipIf(process.env.RUN_DB_TESTS !== "true")("real PostgreSQL mutation boundaries", () => {
   const owner = `audit-test-${crypto.randomUUID()}`;
@@ -115,4 +117,33 @@ describe.skipIf(process.env.RUN_DB_TESTS !== "true")("real PostgreSQL mutation b
       expect(saved.status).toBe("failed"); expect(saved.leaseToken).toBeNull(); expect(saved.finishedAt).not.toBeNull();
     });
   });
+  it("uses the real auth adapter for signup, signout and password login without accepting privilege fields", async () => {
+    const email = `${crypto.randomUUID()}@example.invalid`;
+    const password = "integration-password-12345";
+    let authUserId: string | undefined;
+    try {
+      const signedUp = await auth.api.signUpEmail({ body: { name: "Auth fixture", email, password, role: "admin", executionApproved: true } as any, asResponse: true });
+      expect(signedUp.status).toBe(200);
+      const payload = await signedUp.json(); authUserId = payload.user.id;
+      const [saved] = await db.select().from(users).where(eq(users.id, authUserId!));
+      expect(saved.role).toBe("user"); expect(saved.executionApproved).toBe(false);
+      const cookie = signedUp.headers.getSetCookie().map((value) => value.split(";")[0]).join("; ");
+      const session = await auth.api.getSession({ headers: new Headers({ cookie }) });
+      expect(session?.user.id).toBe(authUserId);
+      await auth.api.signOut({ headers: new Headers({ cookie }) });
+      expect(await auth.api.getSession({ headers: new Headers({ cookie }) })).toBeNull();
+      const loggedIn = await auth.api.signInEmail({ body: { email, password }, asResponse: true });
+      expect(loggedIn.status).toBe(200);
+    } finally { if (authUserId) await db.delete(users).where(eq(users.id, authUserId)); }
+  }, 20_000);
+  it("bridges a real HTTP signup and session cookie through Fastify", async () => {
+    const app = createApp(); let id: string | undefined;
+    try {
+      const response = await app.inject({ method: "POST", url: "/api/v1/auth/sign-up/email", headers: { origin: "http://localhost:3000" }, payload: { name: "HTTP auth fixture", email: `${crypto.randomUUID()}@example.invalid`, password: "http-auth-password-12345" } });
+      expect(response.statusCode).toBe(200); id = response.json().user.id;
+      const cookie = response.cookies.map((entry) => `${entry.name}=${entry.value}`).join("; ");
+      const session = await app.inject({ url: "/api/v1/session", headers: { cookie } });
+      expect(session.json().user.id).toBe(id);
+    } finally { await app.close(); if (id) await db.delete(users).where(eq(users.id, id)); }
+  }, 20_000);
 });

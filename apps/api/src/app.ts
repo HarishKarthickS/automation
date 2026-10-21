@@ -25,7 +25,7 @@ const SLOW_REQUEST_THRESHOLD_MS = 250;
 export function createApp() {
   const app = Fastify({
     loggerInstance: logger,
-    trustProxy: env.TRUST_PROXY_HOPS || false,
+    trustProxy: env.TRUST_PROXY_HOPS ? (_address: string, hop: number) => hop < env.TRUST_PROXY_HOPS : false,
     bodyLimit: env.MAX_CODE_SIZE_BYTES + 25 * 1024
   });
 

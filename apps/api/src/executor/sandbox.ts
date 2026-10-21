@@ -4,8 +4,8 @@ import { env } from "../config/env.js";
 import type { RunnerInput, RunnerResult, RuntimeCommand } from "./runner.js";
 
 export const SANDBOX_IMAGES: Record<string, string> = {
-  nodejs20: "node:22-bookworm-slim", python312: "python:3.12-slim-bookworm", go122: "golang:1.22-bookworm",
-  rust183: "rust:1.83-slim-bookworm", java21: "eclipse-temurin:21-jdk-jammy", cpp23: "gcc:14-bookworm"
+  nodejs20: "node:22-bookworm-slim@sha256:3ed98443660ff48413b5af19ecefce3b9d50845a901a43420d47cc63a9fddbe9", python312: "python:3.12-slim-bookworm@sha256:5d9e6adc9abd558bc0ce05f9ab16cef71328916fc9728f6b81e337af86a737e2", go122: "golang:1.22-bookworm@sha256:3d699e4d15d0f8f13c9195c0632a16702b8cbdece2955af1c23b37ae5d55a253",
+  rust183: "rust:1.83-slim-bookworm@sha256:540c902e99c384163b688bbd8b5b8520e94e7731b27f7bd0eaa56ae1960627ab", java21: "eclipse-temurin:21-jdk-jammy@sha256:742daacb9316be4b6fc60258f6e4ac2a11882f6c597373c92290a57bfad0d2e0", cpp23: "gcc:14-bookworm@sha256:5e927c284bf55a7dc796262e311a0703344f62f41f5621eb56843111b1d37e15"
 };
 const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 
