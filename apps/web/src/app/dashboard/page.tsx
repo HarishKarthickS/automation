@@ -7,158 +7,152 @@ import { AutomationList } from "@/components/dashboard/automation-list";
 import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Plus, FileCode, AlertTriangle } from "lucide-react";
+import { Plus, ArrowUpRight, AlertTriangle } from "lucide-react";
 import { FeedbackState } from "@/components/ui/feedback-state";
-
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "short"
-});
 
 export default function DashboardPage() {
   const session = useRequireSession();
   const { data, isLoading, error } = useDashboardOverview();
-
-  if (session.loading || isLoading) {
+  if (session.loading || isLoading)
     return (
       <section className="page-shell py-8">
         <DashboardSkeleton />
       </section>
     );
-  }
-
-  if (!session.user) {
-    return null;
-  }
-
+  if (session.error || (error && !data)) return (
+    <section className="page-shell space-y-6 py-10">
+      <h1 className="page-heading">Workspace unavailable</h1>
+      <FeedbackState tone="destructive" title={session.error ? "Unable to check your session" : "Unable to load your automations"} description="Your data has not been changed. Try again in a moment." />
+      <Button variant="outline" onClick={() => window.location.reload()}>Try again</Button>
+    </section>
+  );
+  if (!session.user) return null;
   const overview = data?.overview;
   const automations = overview?.automations ?? [];
   const reliability = overview?.reliability;
   const kpi = overview?.kpi;
-
+  const metrics = [
+    { label: "Automations", value: overview?.counts.totalAutomations ?? "—" },
+    {
+      label: "Active schedules",
+      value: overview?.counts.activeAutomations ?? "—",
+    },
+    { label: "Paused", value: overview?.counts.pausedAutomations ?? "—" },
+    {
+      label: "Success rate · 24h",
+      value: reliability ? `${reliability.successRate}%` : "—",
+    },
+  ];
   return (
-    <section className="page-shell space-y-6 py-6">
-      <Card className="panel border-border/70 shadow-sm">
-        <CardHeader className="pb-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardDescription className="text-xs uppercase tracking-[0.14em]">Control Room</CardDescription>
-              <CardTitle className="mt-2 font-serif text-3xl sm:text-4xl">Automation Dashboard</CardTitle>
-              <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-                Reliable scheduling and code execution with a lightweight operating profile.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" asChild>
-                <Link href="/templates">
-                  <FileCode className="mr-2 h-4 w-4" />
-                  Templates
-                </Link>
-              </Button>
-              <Button asChild>
-                <Link href="/automations/new">
-                  <Plus className="mr-2 h-4 w-4" />
-                  New automation
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
-      <OnboardingChecklist />
-
+    <section className="page-shell space-y-9 py-10">
+      <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+        <div>
+          <p className="eyebrow">Your workspace</p>
+          <h1 className="page-heading mt-3">Overview</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Your automations, and how they’re doing.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href="/templates">
+              Templates <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/automations/new">
+              <Plus className="h-4 w-4" />
+              New automation
+            </Link>
+          </Button>
+        </div>
+      </header>
       {error && (
         <FeedbackState
           tone="destructive"
-          title="Unable to load dashboard overview"
-          description="Refresh and try again."
+          title="Unable to load workspace"
+          description="Refresh to try again. Your automations have not been changed."
         />
       )}
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="stat-card">
-          <CardHeader className="pb-2">
-            <CardDescription>Total</CardDescription>
-            <CardTitle className="font-serif text-3xl">{overview?.counts.totalAutomations ?? 0}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="stat-card">
-          <CardHeader className="pb-2">
-            <CardDescription>Active</CardDescription>
-            <CardTitle className="font-serif text-3xl text-success">{overview?.counts.activeAutomations ?? 0}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="stat-card">
-          <CardHeader className="pb-2">
-            <CardDescription>Paused</CardDescription>
-            <CardTitle className="font-serif text-3xl">{overview?.counts.pausedAutomations ?? 0}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="stat-card">
-          <CardHeader className="pb-2">
-            <CardDescription>Success rate (24h)</CardDescription>
-            <CardTitle className="font-serif text-3xl">{reliability ? `${reliability.successRate}%` : "--"}</CardTitle>
-          </CardHeader>
-        </Card>
+      <div className="grid grid-cols-2 divide-x divide-border overflow-hidden rounded-md border bg-card lg:grid-cols-4">
+        {metrics.map(({ label, value }, index) => (
+          <div
+            key={label}
+            className={`px-5 py-6 ${index > 1 ? "border-t lg:border-t-0" : ""}`}
+          >
+            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="mt-3 font-mono text-3xl font-medium tracking-tight tabular-nums">
+              {value}
+            </p>
+          </div>
+        ))}
       </div>
-
-      <Card className="panel">
-        <CardHeader className="pb-3">
-          <CardTitle className="font-serif text-2xl">Growth Metrics (7d)</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricTile label="Created" value={kpi?.automationsCreated ?? 0} />
-          <MetricTile label="Manual runs" value={kpi?.manualRunsTriggered ?? 0} />
-          <MetricTile label="Successful runs" value={kpi?.successfulRuns ?? 0} />
-          <MetricTile
-            label="First success latency"
-            value={typeof kpi?.firstSuccessLatencyMinutes === "number" ? `${kpi.firstSuccessLatencyMinutes}m` : "--"}
-          />
-        </CardContent>
-      </Card>
-
       {overview && overview.needsAttention.length > 0 && (
-        <Card className="panel border-warning/40">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <AlertTriangle className="h-4 w-4 text-warning" />
-              Needs attention
-            </CardTitle>
-            <CardDescription>Recently paused automations.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-2 sm:grid-cols-3">
-            {overview.needsAttention.map((item) => (
-              <Link
-                key={item.id}
-                href={`/automations/${item.id}`}
-                className="rounded-lg border border-border/70 bg-card/90 p-3 text-sm transition-colors hover:bg-accent/30"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-medium">{item.name}</p>
-                  <Badge variant="secondary">Paused</Badge>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Updated {dateFormatter.format(new Date(item.updatedAt))}
-                </p>
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
+        <div className="flex items-start gap-3 rounded-md border border-warning/25 bg-warning/5 p-4">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+          <div>
+            <p className="text-sm font-medium">
+              {overview.needsAttention.length} paused{" "}
+              {overview.needsAttention.length === 1
+                ? "automation needs"
+                : "automations need"}{" "}
+              a look
+            </p>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+              {overview.needsAttention.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/automations/${item.id}`}
+                  className="text-xs text-muted-foreground underline underline-offset-4"
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
-
-      <AutomationList automations={automations} />
+      <div>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base font-medium tracking-tight">
+            Automations{" "}
+            <span className="ml-2 font-mono text-xs font-normal text-muted-foreground">
+              {automations.length}
+            </span>
+          </h2>
+          <p className="hidden font-mono text-[10px] text-muted-foreground sm:block">
+            SCRIPTS / SCHEDULES / RUNS
+          </p>
+        </div>
+        <AutomationList automations={automations} />
+      </div>
+      <OnboardingChecklist />
+      {kpi && (
+        <section className="border-t pt-6">
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="text-sm font-medium">Activity</h2>
+            <p className="eyebrow">Last 7 days</p>
+          </div>
+          <dl className="grid grid-cols-2 gap-6 lg:grid-cols-4">
+            {[
+              ["Automations created", kpi.automationsCreated],
+              ["Manual runs", kpi.manualRunsTriggered],
+              ["Successful runs", kpi.successfulRuns],
+              [
+                "Time to first success",
+                typeof kpi.firstSuccessLatencyMinutes === "number"
+                  ? `${kpi.firstSuccessLatencyMinutes} min`
+                  : "—",
+              ],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-xs text-muted-foreground">{label}</dt>
+                <dd className="mt-2 font-mono text-lg">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
     </section>
-  );
-}
-
-function MetricTile({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-lg border border-border/70 bg-card/90 p-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-xl font-semibold">{value}</p>
-    </div>
   );
 }

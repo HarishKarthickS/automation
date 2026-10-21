@@ -14,13 +14,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, LayoutDashboard, FileCode, Shield } from "lucide-react";
+import { ArrowUpRight, ChevronDown, LogOut, Workflow } from "lucide-react";
 
 export function TopBar() {
   const router = useRouter();
   const pathname = usePathname();
   const session = useSessionState();
-
+  const nav = [
+    { href: "/dashboard", label: "Workspace" },
+    { href: "/templates", label: "Templates" },
+    ...(session.user?.isAdmin ? [{ href: "/admin", label: "Admin" }] : []),
+  ];
+  const active = (href: string) =>
+    pathname?.startsWith(href) ||
+    (href === "/dashboard" && pathname?.startsWith("/automations"));
   const handleSignOut = async () => {
     try {
       await authClient.signOut();
@@ -30,98 +37,111 @@ export function TopBar() {
       router.refresh();
     }
   };
-
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/75 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/65">
-      <div className="page-shell flex items-center justify-between py-3">
-        <div className="flex items-center gap-8">
-          <Link href="/dashboard" className="flex flex-col leading-none">
-            <span className="font-serif text-xl font-semibold tracking-tight text-foreground">
-              Automiq
+    <header className="sticky top-0 z-40 border-b bg-background">
+      <div className="page-shell flex min-h-16 items-center justify-between gap-4 py-0">
+        <div className="flex items-center gap-10">
+          <Link
+            href={session.user ? "/dashboard" : "/"}
+            aria-label="Automiq home"
+            className="flex items-center gap-2.5"
+          >
+            <span className="flex h-7 w-7 items-center justify-center rounded-[5px] bg-primary text-primary-foreground">
+              <Workflow className="h-4 w-4" strokeWidth={1.8} />
             </span>
-            <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-              Platform
+            <span className="text-lg font-semibold tracking-[-0.05em]">
+              automiq<span className="text-primary">.</span>
             </span>
           </Link>
-
-          <nav className="hidden items-center gap-2 text-sm md:flex">
-            <Link
-              href="/dashboard"
-              className={`flex items-center gap-2 rounded-xl px-3 py-2 transition-colors ${
-                pathname?.startsWith("/dashboard")
-                  ? "bg-secondary text-secondary-foreground"
-                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
-              }`}
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Dashboard
-            </Link>
-            <Link
-              href="/templates"
-              className={`flex items-center gap-2 rounded-xl px-3 py-2 transition-colors ${
-                pathname?.startsWith("/templates")
-                  ? "bg-secondary text-secondary-foreground"
-                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
-              }`}
-            >
-              <FileCode className="h-4 w-4" />
-              Templates
-            </Link>
-            {session.user?.isAdmin && (
+          <nav
+            aria-label="Main navigation"
+            className="hidden items-center gap-7 md:flex"
+          >
+            {nav.map(({ href, label }) => (
               <Link
-                href="/admin"
-                className={`flex items-center gap-2 rounded-xl px-3 py-2 transition-colors ${
-                  pathname?.startsWith("/admin")
-                    ? "bg-secondary text-secondary-foreground"
-                    : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
-                }`}
+                key={href}
+                href={href}
+                aria-current={active(href) ? "page" : undefined}
+                className={`flex h-16 items-center border-b-2 text-[13px] transition-colors ${active(href) ? "border-primary font-medium text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
               >
-                <Shield className="h-4 w-4" />
-                Admin
+                {label}
               </Link>
-            )}
+            ))}
           </nav>
         </div>
-
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <a
+            href="https://github.com/HarishKarthickS/automation"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden items-center gap-1 text-xs text-muted-foreground hover:text-foreground lg:flex"
+          >
+            Source <ArrowUpRight className="h-3 w-3" />
+          </a>
           <ThemeToggle />
-          
           {session.loading ? (
-            <div className="h-9 w-9 animate-pulse rounded-full bg-muted" />
+            <div
+              className="h-8 w-16 animate-pulse rounded bg-muted"
+              aria-label="Loading account"
+            />
           ) : session.user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
+                <Button variant="ghost" className="gap-2 px-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded bg-secondary font-mono text-xs text-foreground">
                     {session.user.email?.[0]?.toUpperCase() ?? "U"}
-                  </div>
+                  </span>
+                  <span className="hidden max-w-28 truncate text-xs sm:inline">
+                    {session.user.name || "Account"}
+                  </span>
+                  <ChevronDown className="h-3 w-3" />
+                  <span className="sr-only">Open account menu</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-60">
                 <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Account</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {session.user.email}
-                    </p>
-                  </div>
+                  <p className="text-xs text-muted-foreground">Signed in as</p>
+                  <p className="mt-1 truncate text-sm">{session.user.email}</p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="text-destructive focus:text-destructive"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
-                  Log out
+                  Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link href="/login">
-              <Button variant="default" size="sm">
-                Sign in
+            <>
+              <Button asChild size="sm" variant="ghost">
+                <Link href="/login">Sign in</Link>
               </Button>
-            </Link>
+              <Button asChild size="sm" className="hidden sm:inline-flex">
+                <Link href="/signup">
+                  Get started <ArrowUpRight className="ml-1 h-3 w-3" />
+                </Link>
+              </Button>
+            </>
           )}
         </div>
       </div>
+      <nav
+        aria-label="Mobile navigation"
+        className="page-shell flex items-center gap-6 overflow-x-auto border-t py-2 md:hidden"
+      >
+        {nav.map(({ href, label }) => (
+          <Link
+            key={href}
+            href={href}
+            aria-current={active(href) ? "page" : undefined}
+            className={`whitespace-nowrap text-xs ${active(href) ? "font-medium text-primary" : "text-muted-foreground"}`}
+          >
+            {label}
+          </Link>
+        ))}
+      </nav>
     </header>
   );
 }

@@ -1,17 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, Circle, Sparkles } from "lucide-react";
+import { CheckCircle2, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCompleteOnboardingStep, useOnboardingStatus } from "@/hooks/use-api";
+import { CardContent } from "@/components/ui/card";
+import {
+  useCompleteOnboardingStep,
+  useOnboardingStatus,
+} from "@/hooks/use-api";
 
 const STEP_LINKS: Record<string, string> = {
   create_automation: "/automations/new",
   configure_schedule: "/automations/new",
   add_secret: "/dashboard",
   trigger_manual_run: "/dashboard",
-  first_successful_run: "/dashboard"
+  first_successful_run: "/dashboard",
 };
 
 export function OnboardingChecklist() {
@@ -24,22 +27,21 @@ export function OnboardingChecklist() {
   }
 
   return (
-    <Card className="hero-surface overflow-hidden border-border/80">
-      <CardHeader>
-        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          <Sparkles className="h-3.5 w-3.5" />
-          Onboarding Sprint
-        </div>
-        <CardTitle className="font-serif text-3xl">Get to your first successful run</CardTitle>
-        <CardDescription>
-          Progress {status.progressPercent}% complete. Finish this checklist to activate your workspace.
-        </CardDescription>
-      </CardHeader>
+    <details className="rounded-md border bg-card">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-sm font-medium [&::-webkit-details-marker]:hidden">
+        <span>
+          Workspace checklist{" "}
+          <span className="ml-2 text-xs font-normal text-muted-foreground">
+            {status.progressPercent}% complete
+          </span>
+        </span>
+        <span className="font-mono text-xs text-primary">View steps +</span>
+      </summary>
       <CardContent className="space-y-3">
         {status.steps.map((step) => (
           <div
             key={step.id}
-            className="flex flex-col gap-3 rounded-xl border border-border/70 bg-card/85 p-4 sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-3 rounded-md border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="flex items-start gap-3">
               {step.completed ? (
@@ -49,7 +51,9 @@ export function OnboardingChecklist() {
               )}
               <div>
                 <p className="text-sm font-semibold">{step.title}</p>
-                <p className="text-xs text-muted-foreground">{step.description}</p>
+                <p className="text-xs text-muted-foreground">
+                  {step.description}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -72,6 +76,6 @@ export function OnboardingChecklist() {
           </div>
         ))}
       </CardContent>
-    </Card>
+    </details>
   );
 }

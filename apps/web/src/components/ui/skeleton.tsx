@@ -58,7 +58,7 @@ function DashboardSkeleton() {
       <div className="panel space-y-4 p-8">
         <Skeleton className="h-4 w-24" />
         <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-5 w-96" />
+        <Skeleton className="h-5 w-full max-w-96" />
       </div>
       <AutomationListSkeleton />
     </div>
