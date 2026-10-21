@@ -9,7 +9,14 @@ const app = createApp();
 async function ensureDatabaseReady() {
   if (env.autoMigrate) {
     app.log.info("AUTO_MIGRATE=true, applying database migrations");
-    await migrate(db, { migrationsFolder: "./drizzle" });
+    const migrationLock = await pool.connect();
+    try {
+      await migrationLock.query("select pg_advisory_lock(7081342)");
+      await migrate(db, { migrationsFolder: "./drizzle" });
+    } finally {
+      await migrationLock.query("select pg_advisory_unlock(7081342)");
+      migrationLock.release();
+    }
   }
 
   const result = await pool.query<{ relation: string | null }>(

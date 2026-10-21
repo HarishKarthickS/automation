@@ -73,7 +73,7 @@ export const env = {
   isProd: parsed.data.NODE_ENV === "production",
   autoMigrate:
     parsed.data.AUTO_MIGRATE === "true" ||
-    (parsed.data.AUTO_MIGRATE === undefined && parsed.data.NODE_ENV !== "production"),
+    parsed.data.AUTO_MIGRATE === undefined,
   enabledRuntimes: parsed.data.ENABLED_RUNTIMES.split(",")
     .map((value) => value.trim())
     .filter((value): value is RuntimeId => (RUNTIMES as readonly string[]).includes(value)),
