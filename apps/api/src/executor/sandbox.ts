@@ -26,7 +26,7 @@ export function sandboxCommand(input: RunnerInput, command: RuntimeCommand, host
     "--cpus=1", "--memory=512m", "--memory-swap=512m", "--pids-limit=64", "--read-only", "--cap-drop=ALL",
     "--security-opt=no-new-privileges", "--user=65534:65534", "--init", "--stop-timeout=1",
     "--tmpfs=/workspace:rw,exec,nosuid,size=134217728,mode=1777", "--tmpfs=/tmp:rw,noexec,nosuid,size=67108864,mode=1777",
-    "--workdir=/workspace", "--env=HOME=/workspace", "--env=NODE_ENV=production", "--env=GOCACHE=/workspace/go-cache", "--env=GOPATH=/workspace/go", "--env=CARGO_HOME=/workspace/cargo",
+    "--workdir=/workspace", "--env=HOME=/workspace", "--env=NODE_ENV=production", "--env=GOCACHE=/workspace/go-cache", "--env=GOPATH=/workspace/go", "--env=GOTMPDIR=/workspace", "--env=GOFLAGS=-p=2", "--env=GOMAXPROCS=2", "--env=CARGO_HOME=/workspace/cargo",
     ...Object.keys(input.envVars).map((key) => `--env=${key}`), "-i", image,
     "timeout", "--signal=TERM", "--kill-after=2", `${Math.max(1, input.timeoutSeconds)}s`, "sh", "-s"];
   return { name, args, script };
