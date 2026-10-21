@@ -7,6 +7,7 @@ nav:
   - Getting Started:
     - Overview: getting-started/overview.md
   - Runtimes:
+    - Node.js: runtimes/nodejs.md
     - C++23: runtimes/cpp.md
     - Java 21: runtimes/java.md
     - Python 3.12: runtimes/python.md

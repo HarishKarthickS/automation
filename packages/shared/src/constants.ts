@@ -16,6 +16,15 @@ export const RUNTIMES = [
 
 export type RuntimeId = (typeof RUNTIMES)[number];
 
+export const RUNTIME_LABELS: Record<RuntimeId, string> = {
+  nodejs20: "Node.js",
+  cpp23: "C++23",
+  java21: "Java 21",
+  python312: "Python 3.12",
+  go122: "Go 1.22",
+  rust183: "Rust 1.83"
+};
+
 export const LIMITS = {
   MAX_CODE_SIZE_BYTES: 100 * 1024,
   DEFAULT_TIMEOUT_SECONDS: 30,

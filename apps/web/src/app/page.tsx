@@ -144,9 +144,7 @@ export default function HomePage() {
           <span>Rust</span>
           <span>Java</span>
           <span>C++</span>
-          <span className="text-muted-foreground">
-            Node.js <sup className="font-mono text-[9px]">LEGACY</sup>
-          </span>
+          <span>Node.js</span>
         </div>
       </section>
 
