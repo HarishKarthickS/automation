@@ -5,13 +5,15 @@ const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 export const csrfPlugin = fp(async (app) => {
   app.addHook("onRequest", async (request, reply) => {
-    if (request.url.startsWith("/api/v1/internal") || request.url.startsWith("/api/v1/auth")) {
+    const pathname = request.url.split("?")[0];
+    if (["/api/v1/internal", "/api/v1/auth"].some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
       return;
     }
 
     const existing = request.cookies.csrf_token;
 
-    if (!existing) {
+    // The token endpoint owns issuance so its JSON and single cookie always agree.
+    if (!existing && pathname !== "/api/v1/csrf-token") {
       const token = crypto.randomBytes(24).toString("base64url");
       reply.setCookie("csrf_token", token, {
         path: "/",
