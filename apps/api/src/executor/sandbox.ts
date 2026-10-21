@@ -65,8 +65,8 @@ export async function executeIsolated(input: RunnerInput, command: RuntimeComman
     child.once("error", (failure) => { spawnError = failure; });
     child.once("close", (code) => {
       clearTimeout(timer); input.signal?.removeEventListener("abort", abort);
-      const timeout = timedOut || code === 124 || code === 137;
-      resolve({ status: aborted ? "killed" : timeout ? "timed_out" : limited || spawnError || code !== 0 ? "failed" : "succeeded",
+      const timeout = timedOut || code === 124 || (code === 137 && Date.now() - started >= input.timeoutSeconds * 1000);
+      resolve({ status: aborted ? "killed" : limited ? "failed" : timeout ? "timed_out" : code === 137 ? "killed" : spawnError || code !== 0 ? "failed" : "succeeded",
         output, error: aborted ? "Execution cancelled" : limited ? "Output truncated due to size limit" : timeout ? "Execution timed out" : spawnError?.message ?? (error || (code === 0 ? null : `Exited with code ${code}`)), exitCode: code, durationMs: Date.now() - started });
     });
   });
