@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { AutomationDTO } from "@automation/shared";
-import { automationCreateSchema, automationUpdateSchema, type RuntimeId } from "@automation/shared";
+import { automationCreateSchema, automationUpdateSchema, RUNTIMES, RUNTIME_LABELS, type RuntimeId } from "@automation/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,17 +58,15 @@ const FALLBACK_TIMEZONES = [
 
 const IDLE_PROMPT_MS = 30_000;
 const AUTOSAVE_COUNTDOWN_SECONDS = 10;
-const RUNTIME_OPTIONS: Array<{ value: RuntimeId; label: string; hint: string }> = [
-  { value: "cpp23", label: "C++23", hint: "Compiled with g++ and executed as a subprocess" },
-  { value: "java21", label: "Java 21", hint: "Compiled with javac and run with java" },
-  { value: "python312", label: "Python 3.12", hint: "Executed with python runtime" },
-  { value: "go122", label: "Go 1.22", hint: "Built and run with go toolchain" },
-  { value: "rust183", label: "Rust 1.83", hint: "Compiled with rustc and executed" }
-];
-const LEGACY_RUNTIME_OPTIONS: Array<{ value: RuntimeId; label: string; hint: string }> = [
-  ...RUNTIME_OPTIONS,
-  { value: "nodejs20", label: "Node.js 20 (Legacy)", hint: "Legacy runtime for existing automations" }
-];
+const RUNTIME_HINTS: Record<RuntimeId, string> = {
+  cpp23: "Compiled with g++ and executed as a subprocess",
+  java21: "Compiled with javac and run with java",
+  python312: "Executed with python runtime",
+  go122: "Built and run with go toolchain",
+  rust183: "Compiled with rustc and executed",
+  nodejs20: "Runs with the Node.js version installed on the execution host"
+};
+const RUNTIME_OPTIONS = RUNTIMES.map((value) => ({ value, label: RUNTIME_LABELS[value], hint: RUNTIME_HINTS[value] }));
 const CODE_SNIPPETS: Record<RuntimeId, string> = {
   cpp23: [
     "#include <iostream>",
@@ -282,10 +280,7 @@ export function AutomationForm({ mode, automation }: AutomationFormProps) {
     setCode(payload.code);
   }, []);
 
-  const runtimeOptions = useMemo(
-    () => (mode === "edit" && automation?.runtime === "nodejs20" ? LEGACY_RUNTIME_OPTIONS : RUNTIME_OPTIONS),
-    [automation?.runtime, mode]
-  );
+  const runtimeOptions = RUNTIME_OPTIONS;
 
   const onRuntimeChange = (nextRuntime: RuntimeId) => {
     if (nextRuntime === runtime) {

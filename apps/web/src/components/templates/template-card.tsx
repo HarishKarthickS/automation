@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { TemplateDTO } from "@automation/shared";
+import { RUNTIME_LABELS, type TemplateDTO } from "@automation/shared";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,15 +9,13 @@ interface TemplateCardProps {
   template: TemplateDTO;
 }
 
-const runtimeLabels = { python312: "Python", go122: "Go", rust183: "Rust", java21: "Java", cpp23: "C++", nodejs20: "Node.js" };
-
 export function TemplateCard({ template }: TemplateCardProps) {
   return (
     <Card className="group flex h-full flex-col overflow-hidden border-border bg-card transition-colors hover:border-foreground/30">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <CardTitle className="text-base font-medium tracking-tight">{template.name}</CardTitle>
-          <Badge variant="secondary" className="shrink-0 font-mono text-[10px]">{runtimeLabels[template.runtime]}</Badge>
+          <Badge variant="secondary" className="shrink-0 font-mono text-[10px]">{RUNTIME_LABELS[template.runtime]}</Badge>
         </div>
       </CardHeader>
       <CardContent className="flex-1 pb-6">

@@ -42,7 +42,7 @@ The fixture server is not part of the app. Deployment updates after merge.
 - Automation CRUD with cron schedule and timezone
 - Encrypted per-automation secrets (AES-256-GCM)
 - Subprocess execution with env allowlist, timeouts and output limits + cleanup
-- Multi-runtime execution support for C++, Java, Python, Go, Rust (Node.js legacy compatibility)
+- Multi-runtime execution support for Node.js, C++, Java, Python, Go, and Rust
 - Run history/logs and manual trigger
 - Internal scheduler endpoint (`/api/v1/internal/run-due-automations`)
 - Public template publishing and clone workflow

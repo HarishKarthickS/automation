@@ -9,7 +9,7 @@ This documentation covers multi-runtime automation execution for cron + timezone
 - Python 3.12 (`python312`)
 - Go 1.22 (`go122`)
 - Rust 1.83 (`rust183`)
-- Node.js 20 (`nodejs20`, legacy compatibility)
+- Node.js (`nodejs20`; uses the host's installed Node.js version)
 
 ## Core behavior
 
