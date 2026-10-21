@@ -30,7 +30,7 @@ export async function claimDueAutomations(batchSize = limits.dueAutomationsBatch
   if (!available.length) return 0;
   return withTransaction(async () => {
     const due = rows<{ id: string }>(await db.execute(sql`SELECT a.id FROM automations a JOIN "user" u ON u.id=a.user_id
-      WHERE a.enabled=true AND a.next_run_at<=now() AND u.suspended=false AND u.execution_approved=true AND a.runtime=ANY(${available}::text[])
+      WHERE a.enabled=true AND a.next_run_at<=now() AND u.suspended=false AND u.execution_approved=true AND a.runtime IN (${sql.join(available.map((id) => sql`${id}`), sql`, `)})
       ORDER BY a.next_run_at,a.id FOR UPDATE OF a SKIP LOCKED LIMIT ${batchSize}`));
     let count = 0;
     for (const { id } of due) {
@@ -78,7 +78,7 @@ export async function admitNextRun(): Promise<Admitted | null> {
     for (let i = 0; i < 100; i++) {
       const [candidate] = rows<{ id: string; user_id: string }>(await db.execute(sql`SELECT r.id,a.user_id FROM runs r JOIN automations a ON a.id=r.automation_id JOIN "user" u ON u.id=a.user_id
         WHERE r.status='queued' AND r.available_at<=now() AND u.suspended=false AND u.execution_approved=true
-        AND coalesce(r.execution_snapshot::jsonb->>'runtime',a.runtime)=ANY(${available}::text[])
+        AND coalesce(r.execution_snapshot::jsonb->>'runtime',a.runtime) IN (${sql.join(available.map((id) => sql`${id}`), sql`, `)})
         ORDER BY r.available_at,r.queued_at,r.id FOR UPDATE OF r SKIP LOCKED LIMIT 1`));
       if (!candidate) return null;
       const [usage] = rows<{ concurrent: number; daily: number }>(await db.execute(sql`SELECT
