@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { apiFetch } from "./api";
+import { apiFetch, resetCsrfToken } from "./api";
 
 interface SessionPayload {
   user: {
@@ -31,9 +31,17 @@ let sessionCache:
 
 let inFlightSessionRequest: Promise<SessionPayload> | null = null;
 
-export function invalidateSessionCache() {
+export const AUTH_CHANGE_EVENT = "automiq:auth-change";
+let sessionGeneration = 0;
+export function invalidateSessionCache(broadcast = true) {
+  sessionGeneration++;
+  resetCsrfToken();
   sessionCache = null;
   inFlightSessionRequest = null;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
+    if (broadcast) { try { localStorage.setItem(AUTH_CHANGE_EVENT, crypto.randomUUID()); } catch {} }
+  }
 }
 
 async function loadSession(force = false): Promise<SessionPayload> {
@@ -43,7 +51,9 @@ async function loadSession(force = false): Promise<SessionPayload> {
   }
 
   if (!inFlightSessionRequest) {
+    const generation = sessionGeneration;
     inFlightSessionRequest = apiFetch<SessionPayload>("/session", { skipCsrf: true }).then((payload) => {
+      if (generation !== sessionGeneration) throw new Error("Session changed; retry");
       sessionCache = {
         payload,
         fetchedAt: Date.now()
@@ -73,47 +83,20 @@ export function useSessionState() {
   });
 
   useEffect(() => {
-    let mounted = true;
-    const hasFreshCache =
-      sessionCache && Date.now() - sessionCache.fetchedAt < SESSION_CACHE_TTL_MS;
-    if (hasFreshCache && sessionCache) {
-      setState({
-        loading: false,
-        user: sessionCache.payload.user,
-        session: sessionCache.payload.session,
-        error: null
+    let active = true;
+    let requestId = 0;
+    const refresh = () => {
+      const id = ++requestId;
+      setState({ loading: true, user: null, session: null, error: null });
+      loadSession().then((payload) => {
+        if (active && id === requestId) setState({ loading: false, ...payload, error: null });
+      }).catch((error: Error) => {
+        if (active && id === requestId) setState({ loading: false, user: null, session: null, error: error.message });
       });
-    } else {
-      setState((current) => ({ ...current, loading: true }));
-    }
-
-    loadSession()
-      .then((payload) => {
-        if (!mounted) {
-          return;
-        }
-        setState({
-          loading: false,
-          user: payload.user,
-          session: payload.session,
-          error: null
-        });
-      })
-      .catch((error: Error) => {
-        if (!mounted) {
-          return;
-        }
-        setState({
-          loading: false,
-          user: null,
-          session: null,
-          error: error.message
-        });
-      });
-
-    return () => {
-      mounted = false;
     };
+    window.addEventListener(AUTH_CHANGE_EVENT, refresh);
+    refresh();
+    return () => { active = false; window.removeEventListener(AUTH_CHANGE_EVENT, refresh); };
   }, []);
 
   return state;

@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import fp from "fastify-plugin";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
@@ -10,19 +9,6 @@ export const csrfPlugin = fp(async (app) => {
       return;
     }
 
-    const existing = request.cookies.csrf_token;
-
-    // The token endpoint owns issuance so its JSON and single cookie always agree.
-    if (!existing && pathname !== "/api/v1/csrf-token") {
-      const token = crypto.randomBytes(24).toString("base64url");
-      reply.setCookie("csrf_token", token, {
-        path: "/",
-        sameSite: "strict",
-        httpOnly: false,
-        secure: process.env.NODE_ENV === "production"
-      });
-    }
-
     if (SAFE_METHODS.has(request.method)) {
       return;
     }
@@ -31,7 +17,7 @@ export const csrfPlugin = fp(async (app) => {
     const headerToken = request.headers["x-csrf-token"];
 
     if (!cookieToken || typeof headerToken !== "string" || cookieToken !== headerToken) {
-      reply.code(403).send({ message: "Invalid CSRF token" });
+      reply.code(403).send({ message: "Invalid CSRF token", code: "CSRF_INVALID" });
     }
   });
 });

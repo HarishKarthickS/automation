@@ -3,8 +3,10 @@ import type { FastifyPluginAsync } from "fastify";
 import { getSessionFromRequest } from "../auth/session.js";
 
 export const authRoutes: FastifyPluginAsync = async (app) => {
-  app.get("/csrf-token", async (_request, reply) => {
-    const token = crypto.randomBytes(24).toString("base64url");
+  app.get("/csrf-token", async (request, reply) => {
+    const existing = request.cookies.csrf_token;
+    const token = existing && /^[\w-]{32}$/.test(existing) ? existing : crypto.randomBytes(24).toString("base64url");
+    reply.header("cache-control", "no-store");
     reply.setCookie("csrf_token", token, {
       path: "/",
       sameSite: "lax",

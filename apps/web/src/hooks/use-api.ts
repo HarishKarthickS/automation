@@ -11,7 +11,16 @@ import type {
   TemplateDTO,
   UpdateAutomationInput
 } from "@automation/shared";
+import { useSessionState } from "@/lib/session";
 import { apiFetch } from "@/lib/api";
+
+function usePrivateQuery<T>(options: { queryKey: readonly unknown[]; queryFn: () => Promise<T>; enabled?: boolean; staleTime?: number; refetchOnWindowFocus?: boolean }) {
+  const session = useSessionState();
+  return useQuery({ ...options, queryKey: [...options.queryKey, { userId: session.user?.id ?? null }], enabled: !session.loading && !!session.user && options.enabled !== false });
+}
+function invalidateWorkspace(client: ReturnType<typeof useQueryClient>) {
+  for (const key of ["dashboard", "reliability", "metrics", "onboarding"]) void client.invalidateQueries({ queryKey: [key] });
+}
 
 const automationsKeys = {
   all: ["automations"] as const,
@@ -22,14 +31,14 @@ const automationsKeys = {
 };
 
 export function useAutomations(limit: number = 25, cursor?: string) {
-  return useQuery({
+  return usePrivateQuery({
     queryKey: automationsKeys.list(limit, cursor),
     queryFn: () => apiFetch<{ items: AutomationDTO[]; nextCursor: string | null }>(`/automations?limit=${limit}${cursor ? `&cursor=${cursor}` : ""}`, { skipCsrf: true })
   });
 }
 
 export function useAutomation(id: string) {
-  return useQuery({
+  return usePrivateQuery({
     queryKey: automationsKeys.detail(id),
     queryFn: () => apiFetch<{ automation: AutomationDTO }>(`/automations/${id}`, { skipCsrf: true }),
     enabled: !!id
@@ -42,6 +51,7 @@ export function useCreateAutomation() {
   return useMutation({
     mutationFn: (input: CreateAutomationInput) => apiFetch<{ automation: AutomationDTO }>("/automations", { method: "POST", body: input }),
     onSuccess: () => {
+      invalidateWorkspace(queryClient);
       queryClient.invalidateQueries({ queryKey: automationsKeys.lists() });
     }
   });
@@ -53,6 +63,7 @@ export function useUpdateAutomation(id: string) {
   return useMutation({
     mutationFn: (input: UpdateAutomationInput) => apiFetch<{ automation: AutomationDTO }>(`/automations/${id}`, { method: "PUT", body: input }),
     onSuccess: () => {
+      invalidateWorkspace(queryClient);
       queryClient.invalidateQueries({ queryKey: automationsKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: automationsKeys.lists() });
     }
@@ -65,6 +76,7 @@ export function useDeleteAutomation() {
   return useMutation({
     mutationFn: (id: string) => apiFetch(`/automations/${id}`, { method: "DELETE" }),
     onSuccess: () => {
+      invalidateWorkspace(queryClient);
       queryClient.invalidateQueries({ queryKey: automationsKeys.lists() });
     }
   });
@@ -76,6 +88,7 @@ export function useTriggerAutomation() {
   return useMutation({
     mutationFn: (id: string) => apiFetch<{ runId: string }>(`/automations/${id}/trigger`, { method: "POST" }),
     onSuccess: () => {
+      invalidateWorkspace(queryClient);
       queryClient.invalidateQueries({ queryKey: runsKeys.lists() });
     }
   });
@@ -90,7 +103,7 @@ const runsKeys = {
 };
 
 export function useRuns(automationId: string, limit: number = 20, cursor?: string) {
-  return useQuery({
+  return usePrivateQuery({
     queryKey: runsKeys.list(automationId, limit, cursor),
     queryFn: () => apiFetch<{ items: RunDTO[]; nextCursor: string | null }>(`/automations/${automationId}/runs?limit=${limit}${cursor ? `&cursor=${cursor}` : ""}`, { skipCsrf: true }),
     enabled: !!automationId
@@ -98,7 +111,7 @@ export function useRuns(automationId: string, limit: number = 20, cursor?: strin
 }
 
 export function useRun(runId: string) {
-  return useQuery({
+  return usePrivateQuery({
     queryKey: runsKeys.detail(runId),
     queryFn: () => apiFetch<{ run: RunDTO }>(`/runs/${runId}`, { skipCsrf: true }),
     enabled: !!runId
@@ -106,7 +119,7 @@ export function useRun(runId: string) {
 }
 
 export function useReliabilitySummary() {
-  return useQuery({
+  return usePrivateQuery({
     queryKey: ["reliability", "summary"] as const,
     queryFn: () => apiFetch<{ summary: ReliabilitySummaryDTO }>("/reliability/summary", { skipCsrf: true }),
     staleTime: 30_000
@@ -114,7 +127,7 @@ export function useReliabilitySummary() {
 }
 
 export function useOnboardingStatus() {
-  return useQuery({
+  return usePrivateQuery({
     queryKey: ["onboarding", "status"] as const,
     queryFn: () => apiFetch<{ status: OnboardingStatusDTO }>("/onboarding/status", { skipCsrf: true })
   });
@@ -129,13 +142,14 @@ export function useCompleteOnboardingStep() {
         body: { step, completed: true }
       }),
     onSuccess: () => {
+      invalidateWorkspace(queryClient);
       queryClient.invalidateQueries({ queryKey: ["onboarding", "status"] });
     }
   });
 }
 
 export function useKpiSummary() {
-  return useQuery({
+  return usePrivateQuery({
     queryKey: ["metrics", "summary"] as const,
     queryFn: () =>
       apiFetch<{ kpi: KpiSummaryDTO; onboarding: OnboardingStatusDTO }>("/metrics/summary", {
@@ -147,7 +161,7 @@ export function useKpiSummary() {
 }
 
 export function useDashboardOverview() {
-  return useQuery({
+  return usePrivateQuery({
     queryKey: ["dashboard", "overview"] as const,
     queryFn: () => apiFetch<{ overview: DashboardOverviewDTO }>("/dashboard/overview", { skipCsrf: true }),
     staleTime: 30_000,
@@ -156,21 +170,21 @@ export function useDashboardOverview() {
 }
 
 export function useAdminOverview() {
-  return useQuery({
+  return usePrivateQuery({
     queryKey: ["admin", "overview"] as const,
     queryFn: () => apiFetch<AdminOverviewDTO>("/admin/overview", { skipCsrf: true })
   });
 }
 
 export function useAdminUsers() {
-  return useQuery({
+  return usePrivateQuery({
     queryKey: ["admin", "users"] as const,
     queryFn: () => apiFetch<{ items: Array<{ id: string; email: string; name: string; role: string; suspended: boolean }> }>("/admin/users", { skipCsrf: true })
   });
 }
 
 export function useAdminAutomations() {
-  return useQuery({
+  return usePrivateQuery({
     queryKey: ["admin", "automations"] as const,
     queryFn: () =>
       apiFetch<{ items: Array<{ id: string; name: string; userId: string; enabled: boolean; updatedAt: string }> }>(
@@ -181,7 +195,7 @@ export function useAdminAutomations() {
 }
 
 export function useAdminRuns() {
-  return useQuery({
+  return usePrivateQuery({
     queryKey: ["admin", "runs"] as const,
     queryFn: () =>
       apiFetch<{ items: Array<{ id: string; automationId: string; status: string; startedAt: string; attempt: number }> }>(
@@ -192,7 +206,7 @@ export function useAdminRuns() {
 }
 
 export function useAdminTemplates() {
-  return useQuery({
+  return usePrivateQuery({
     queryKey: ["admin", "templates"] as const,
     queryFn: () =>
       apiFetch<{ items: Array<{ id: string; name: string; ownerUserId: string; isPublished: boolean; updatedAt: string }> }>(
@@ -203,7 +217,7 @@ export function useAdminTemplates() {
 }
 
 export function useAdminAuditLogs() {
-  return useQuery({
+  return usePrivateQuery({
     queryKey: ["admin", "audit"] as const,
     queryFn: () =>
       apiFetch<{ items: Array<{ id: string; action: string; resourceType: string; resourceId: string; reason: string; createdAt: string }> }>(
@@ -270,6 +284,7 @@ export function useCloneTemplate() {
         body: { nameOverride, timezoneOverride }
       }),
     onSuccess: () => {
+      invalidateWorkspace(queryClient);
       queryClient.invalidateQueries({ queryKey: automationsKeys.lists() });
     }
   });
@@ -281,6 +296,7 @@ export function usePublishAutomation() {
   return useMutation({
     mutationFn: (id: string) => apiFetch<{ automation: AutomationDTO }>(`/automations/${id}/publish`, { method: "POST" }),
     onSuccess: () => {
+      invalidateWorkspace(queryClient);
       queryClient.invalidateQueries({ queryKey: automationsKeys.lists() });
       queryClient.invalidateQueries({ queryKey: templatesKeys.lists() });
     }
@@ -296,6 +312,7 @@ export function useUnpublishAutomation() {
         method: "POST"
       }),
     onSuccess: () => {
+      invalidateWorkspace(queryClient);
       queryClient.invalidateQueries({ queryKey: automationsKeys.lists() });
       queryClient.invalidateQueries({ queryKey: templatesKeys.lists() });
     }
